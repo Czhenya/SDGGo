@@ -76,21 +76,31 @@
     <Reference Include="UnityEngine.HoloLens">
       <HintPath>Library\UnityAssemblies\UnityEngine.HoloLens.dll</HintPath>
     </Reference>
+    <Reference Include="WebSocket4Net">
+      <HintPath>Assets\Plugin\WebSocket4Net.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Assets\Plugin\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="SocketIoClientDotNet">
+      <HintPath>Assets\Plugin\SocketIoClientDotNet.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\_Scripts\Common\DontDestroy.cs" />
     <Compile Include="Assets\_Scripts\Common\Singleton.cs" />
+    <Compile Include="Assets\_Scripts\Common\SocketIO.cs" />
     <Compile Include="Assets\_Scripts\Common\Timer.cs" />
     <Compile Include="Assets\_Scripts\Game\Game.cs" />
-    <Compile Include="Assets\_Scripts\Game\GOClass.cs" />
     <Compile Include="Assets\_Scripts\Game\Panel.cs" />
-    <Compile Include="Assets\_Scripts\Game\SocketIO.cs" />
     <Compile Include="Assets\_Scripts\Game\UIEventManager.cs" />
-    <Compile Include="Assets\_Scripts\Menu\CurrentPlayer.cs" />
     <Compile Include="Assets\_Scripts\Menu\MenuManager.cs" />
     <Compile Include="Assets\_Scripts\Menu\RoomButton.cs" />
     <Compile Include="Assets\_Scripts\Menu\RoomSelectManager.cs" />
     <Compile Include="Assets\_Scripts\Menu\WellComeManager.cs" />
+    <Compile Include="Assets\_Scripts\Model\CurrentPlayer.cs" />
+    <Compile Include="Assets\_Scripts\Model\GOClass.cs" />
+    <Compile Include="Assets\_Scripts\Model\Params.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\_Resources\Panel.shader" />
