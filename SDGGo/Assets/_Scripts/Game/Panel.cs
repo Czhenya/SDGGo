@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Runtime.InteropServices;
 
 namespace SDG {
     [ExecuteInEditMode]
@@ -27,12 +28,14 @@ namespace SDG {
         {
             InitialData();
             InitialAllShaderData();
+            SDGGoInit(19);
+            Debug.Log("1+2="+Add(1,2));
         }
 
         // 帧回调
         void Update()
         {
-            
+
         }
         // 固定时间间隔回调
         void FixedUpdate() {
@@ -69,13 +72,17 @@ namespace SDG {
             // 落子合法性
             if (IsOperationAllowed(game.mousePosition))
             {
+                Point gnup = XY2IJ(index);
+                if (!SDGPlayMove(index.x,index.y, game.player)) return;
+                Debug.Log(SDGGetScore());
+
                 // 添加新棋子
                 Move newMove = game.GoPanel[index.x, index.y];
                 game.Moves.Add(newMove);
-                
+
                 // 更新形势
                 //int operation = game.player == 0 ? -1 : 1;
-               // game.UpdateTerritory(index,operation,4);
+                // game.UpdateTerritory(index,operation,4);
                 // 传数据给shader
                 game.UpdateShader(ref mat);
                 // 玩家切换
@@ -100,7 +107,7 @@ namespace SDG {
             }
             else {
                 game.mousePosition = curMousePos;
-            }            
+            }
         }
 
         // 悔棋一步
@@ -160,7 +167,7 @@ namespace SDG {
             mat.SetVectorArray("_MovesBlack", v4s);
             mat.SetVectorArray("_MovesWhite", v4s);
             mat.SetInt("_lastPlayer", 0);
-            mat.SetFloat("_mousePosX",-0.5f);
+            mat.SetFloat("_mousePosX", -0.5f);
             mat.SetFloat("_mousePosY", -0.5f);
         }
         #endregion
@@ -168,9 +175,9 @@ namespace SDG {
         #region 自定义内部函数
 
         Point XY2IJ(Point p) {
-            return new Point(game.panelScale-p.y, p.x);
+            return new Point(game.panelScale - p.y, p.x);
         }
-        
+
         // 玩家切换
         void PlayerChange() {
             if (game.player == 0)
@@ -352,16 +359,28 @@ namespace SDG {
 
         #region 计时逻辑
         void OnTimeEnd() {
-           // Debug.Log("时间到！");
+            // Debug.Log("时间到！");
             timer.EndTimer();
         }
 
         void OnSecond() {
             //Debug.Log("又一秒！");
             game.timeUsed++;
-            timerLabel.text = timer._currentTime.ToString() ;
+            timerLabel.text = timer._currentTime.ToString();
         }
 
+        #endregion
+
+        #region 运行时动态链接库
+        [DllImport("sdggnugo")]
+        public static extern int Add(int x,int y);
+
+        [DllImport("sdggnugo")]
+        public static extern void SDGGoInit(int boardsize);
+        [DllImport("sdggnugo")]
+        public static extern float SDGGetScore();
+        [DllImport("sdggnugo")]
+        public static extern bool SDGPlayMove(int i, int j, int color);
         #endregion
     }
 }
