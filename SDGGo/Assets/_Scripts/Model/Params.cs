@@ -2,15 +2,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Params : MonoBehaviour {
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+namespace SDG {
+    public class ParamPlayMove {
+        public string uid;
+        public int x;
+        public int y;
+    }
+
+    public class ParamLogin {
+        public string name;
+    }
+
+public class Params
+    {
+    }
 }

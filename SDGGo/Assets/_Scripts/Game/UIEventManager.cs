@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-namespace SDG {
     public class UIEventManager : MonoBehaviour
     {
 
@@ -33,4 +32,3 @@ namespace SDG {
             SceneManager.LoadScene("Menu");
         }
     }
-}

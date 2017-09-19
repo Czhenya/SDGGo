@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Runtime.InteropServices;
+using SDG;
 
-namespace SDG {
     [ExecuteInEditMode]
     public class Panel : Singleton<Panel>
     {
@@ -383,4 +383,3 @@ namespace SDG {
         public static extern bool SDGPlayMove(int i, int j, int color);
         #endregion
     }
-}

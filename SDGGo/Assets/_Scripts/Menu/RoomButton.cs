@@ -9,7 +9,7 @@ public class RoomButton : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         gameObject.GetComponent<Button>().onClick.AddListener(() => {
-            EnterRoom(roomNum);
+            RoomSelectManager.Ins.EnterRoom(roomNum);
         });
 	}
 	
@@ -17,10 +17,4 @@ public class RoomButton : MonoBehaviour {
 	void Update () {
 		
 	}
-
-    // 进入房间
-    public void EnterRoom(int roomN)
-    {
-        Debug.Log("room:" + roomN);
-    }
 }
