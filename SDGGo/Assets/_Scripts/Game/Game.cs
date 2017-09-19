@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using System.Runtime.InteropServices;
 
 /*
  *  y
@@ -52,7 +52,12 @@ namespace SDG {
         public List<Move> Moves = new List<Move>();    // 已下棋子(按照落子顺序)
         public Move[,] GoPanel = new Move[19, 19];     // 整个棋盘棋子二维数组
         public Move[] stars = new Move[9];             // 九星棋子集合
-        
+
+        // 作为队列结构的open表和close表，用于计算棋串的气
+        private List<Move> openList = new List<Move>();
+        private List<Point> closedList = new List<Point>();
+        private List<Point> closedLibertyList = new List<Point>();
+
         // 构造函数
         public Game(int _scale, float _borderW)
         {
@@ -99,6 +104,9 @@ namespace SDG {
                     ++index;
                 }
             }
+
+            // 初始化gnugo
+            SDGGoInit(_scale);
         }
 
         // 获取玩家对手
@@ -187,38 +195,6 @@ namespace SDG {
             Point curIndex = GetCoordIndex(mousePosition);
             mat.SetFloat("_mousePosX", GoPanel[curIndex.x, curIndex.y].pos.x);
             mat.SetFloat("_mousePosY", GoPanel[curIndex.x, curIndex.y].pos.y);
-            
-            // 更新形势数据
-            /*
-            for (int i = 0; i < panelScale; ++i) {
-                string line = "";
-                for (int j = 0; j < panelScale; ++j) {
-                    int curplayer = GoPanel[j, i].player;
-                    int curworm = GoPanel[j, i].worm;
-                    float finalworm = -1;
-                    switch (curplayer) {
-                        case -1:
-                            if (curworm > 33) finalworm = 1;
-                            if (curworm < -33) finalworm = 0;
-                            break;
-                        case 0:
-                            finalworm = 0;
-                            if (curworm > 0) finalworm = 1;
-                            break;
-                        case 1:
-                            finalworm = 1;
-                            if (curworm < 0) finalworm = 0;
-                            break;
-                        default:
-                            break;
-                    }
-                    worms.Add(finalworm);
-                    line += "   " + (curworm);
-                }
-                Debug.Log(line);
-            }
-            mat.SetFloatArray("_worms", worms);
-            */
         }
 
         // 判断下子操作是否在棋盘区域
@@ -235,72 +211,216 @@ namespace SDG {
             }
         }
 
-        // 形势更新,黑棋为正，白棋为负，operation表示该点值的变化
-        /*
-        public void UpdateTerritory(Point newPos,int operation, int iter) {
-            bool[] stat = { true, true, true, true, true, true, true, true, true };
-            int value = 64 * operation;
-            GoPanel[newPos.x, newPos.y].worm += value;
-            for (int i = 1; i<iter;++i )
+        // 落子操作
+        public bool SetMove(ref Material mat)
+        {
+            Point index = GetCoordIndex(mousePosition);
+            // 更新棋盘棋子状态
+            int curplayer = GoPanel[index.x, index.y].player;
+            // 只能落在无子位置
+            if (curplayer != -1) return false;
+            GoPanel[index.x, index.y].player = player;
+            // 尝试提子
+            CheckNoLiberty(index);
+            // 落子合法性
+            if (IsOperationAllowed(mousePosition))
             {
-                for (int j = 0; j < 8; ++j) {
-                    if (!stat[j]) continue;
-                    Point p = GetNeighbor(newPos, 0, j);
-                    float power = j < 4 ? 0.5f : 0.25f;
-                    int finalValue = (int)(value * Mathf.Pow(power, (float)i));
-                    stat[j] = UpdateWorm(p, finalValue);
-                }
-            }
-            int[,] WORM = new int[19,19];
-            for (int r = 0; r < 19; ++r) {
-                for (int c = 0; c < 19; ++c) {
-                    WORM[r, c] = GoPanel[c, r].worm;
-                }
-            }
-        }
+                Point gnup = XY2IJ(index);
+                if (!SDGPlayMove(index.x, index.y, player)) return false;
+                Debug.Log(SDGGetScore());
 
-        public bool UpdateWorm(Point p, int value) {
-            if (IsPointAllowed(p) && player != PlayerToogle())
-            {
-                GoPanel[p.x, p.y].worm += value;
+                // 添加新棋子
+                Move newMove = GoPanel[index.x, index.y];
+                Moves.Add(newMove);
+                // 传数据给shader
+                UpdateShader(ref mat);
                 return true;
             }
-            else {
+            else
+            {
+                // 落子失败恢复状态
+                GoPanel[index.x, index.y].player = curplayer;
                 return false;
             }
         }
 
-        public Point GetNeighbor(Point start, int dir, int d) {
-            switch (dir) {
-                case 0:
-                    return new Point(start.x, start.y+d);
-                    break;
-                case 1:
-                    return new Point(start.x, start.y-d);
-                    break;
-                case 2:
-                    return new Point(start.x-d, start.y);
-                    break;
-                case 3:
-                    return new Point(start.x+d,start.y);
-                    break;
-                case 4:
-                    return new Point(start.x-d,start.y-d);
-                    break;
-                case 5:
-                    return new Point(start.x - d, start.y + d);
-                    break;
-                case 6:
-                    return new Point(start.x + d, start.y - d);
-                    break;
-                case 7:
-                    return new Point(start.x + d, start.y + d);
-                    break;
-                default:
-                    return start;
+        Point XY2IJ(Point p)
+        {
+            return new Point(panelScale - p.y, p.x);
+        }
+
+        #region 游戏算法
+        // 判断落子是否合法
+        bool IsOperationAllowed(Vector2 mousePos)
+        {
+            // 1. 是否在棋盘内
+            if (!IsInPanel(mousePos)) return false;
+
+            // 2.位置是否为空
+            /*
+            
+            if (GetPanelPlayer(index) != -1)
+            {
+                Debug.Log("该位置不为空！气为：" + IsLibertyExist(index) + "closedList" + closedList.Count);
+                return false;
+            }
+            */
+
+            // 3. 所在棋串是否有气
+            Point index = GetCoordIndex(mousePos);
+            if (!IsLibertyEnough(index))
+            {
+                Debug.Log("所在棋串无气，请下在别处！");
+                return false;
+            }
+
+            return true;
+        }
+
+        // 判断气数是否可落子
+        bool IsLibertyEnough(Point start)
+        {
+            // 先更新当前点棋子状态以便下面算法计算
+            GoPanel[start.x, start.y].player = player;
+            int liberty = IsLibertyExist(start);
+            Debug.Log("落子点气数：" + liberty);
+            if (liberty > 0)
+            {
+                return true;
+            }
+            else
+            {
+                // 如果气为0还原棋子状态为无子
+                GoPanel[start.x, start.y].player = -1;
+                return false;
             }
         }
-        */
+
+        // 判断当前棋串是否有气
+        int IsLibertyExist(Point start)
+        {
+
+            // 清空表
+            openList.Clear();
+            closedList.Clear();
+            closedLibertyList.Clear();
+            // 起点入队
+            openList.Add(GoPanel[start.x, start.y]);
+            return GetLiberty(start);
+        }
+        // 计算当前棋串的气
+        int GetLiberty(Point start)
+        {
+            int liberty = 0;
+            // 广度优先搜索（上下左右四邻接点）
+            int curplayer = GetPanelPlayer(start);
+            LibertyProcess(new Point(start.x, start.y + 1), curplayer, ref liberty);
+            LibertyProcess(new Point(start.x, start.y - 1), curplayer, ref liberty);
+            LibertyProcess(new Point(start.x - 1, start.y), curplayer, ref liberty);
+            LibertyProcess(new Point(start.x + 1, start.y), curplayer, ref liberty);
+
+            // 当前棋子进入closed表
+            closedList.Add(GetCoordIndex(openList[0].pos));
+            openList.RemoveAt(0);
+
+            if (openList.Count != 0)
+            {
+                return liberty + GetLiberty(GetCoordIndex(openList[0].pos));
+            }
+            else
+            {
+                return liberty;
+            }
+        }
+        // 气
+        void LibertyProcess(Point neighbor, int curplayer, ref int liberty)
+        {
+            if (!IsPointAllowed(neighbor)) return;
+
+            Move move = GoPanel[neighbor.x, neighbor.y];
+            int nplayer = GetPanelPlayer(neighbor);
+            // 邻接点无子
+            if (nplayer == -1 && !IsInCosedList(neighbor, closedLibertyList))
+            {
+                ++liberty;
+                closedLibertyList.Add(neighbor);
+            }
+            // 邻接点属于相同棋串且不在closedList
+            else if (nplayer == curplayer && !IsInCosedList(neighbor, closedList))
+            {
+                openList.Add(move);
+            }
+        }
+
+        // 点是否在closedList中
+        bool IsInCosedList(Point neighbor, List<Point> closedL)
+        {
+            for (int i = 0; i < closedL.Count; ++i)
+            {
+                Point tmp = closedL[i];
+                if (tmp.x == neighbor.x && tmp.y == neighbor.y)
+                    return true;
+            }
+            return false;
+        }
+
+        // 自动提子
+        void CheckNoLiberty(Point curPos)
+        {
+            Point top = new Point(curPos.x, curPos.y + 1);
+            Point bottom = new Point(curPos.x, curPos.y - 1);
+            Point left = new Point(curPos.x - 1, curPos.y);
+            Point right = new Point(curPos.x + 1, curPos.y);
+
+            if (IsPointAllowed(top) && GetPanelPlayer(top) == PlayerToogle())
+                EatNoLiberty(top);
+            if (IsPointAllowed(bottom) && GetPanelPlayer(bottom) == PlayerToogle())
+                EatNoLiberty(bottom);
+            if (IsPointAllowed(left) && GetPanelPlayer(left) == PlayerToogle())
+                EatNoLiberty(left);
+            if (IsPointAllowed(right) && GetPanelPlayer(right) == PlayerToogle())
+                EatNoLiberty(right);
+        }
+        // 提子
+        void EatNoLiberty(Point start)
+        {
+            int liberty = IsLibertyExist(start);
+            Debug.Log("邻接点气数：" + liberty);
+            if (liberty == 0)
+            {
+                // 提取掉closedList中的棋子
+                for (int i = 0; i < closedList.Count; ++i)
+                {
+                    Debug.Log("断气棋子点" + i + ":(" + closedList[i].x + ", " + closedList[i].y + ")");
+                    for (int j = 0; j < Moves.Count; ++j)
+                    {
+                        Point index = GetCoordIndex(Moves[j].pos);
+                        if (closedList[i].x == index.x && closedList[i].y == index.y)
+                        {
+                            // 从已下棋子中移除
+                            Moves.RemoveAt(j);
+                            // 恢复棋盘棋子状态为无子
+                            GoPanel[index.x, index.y].player = -1;
+                            break;
+                        }
+                    }
+                }
+
+            }
+        }
+        #endregion
+
+        #region 运行时动态链接库
+        [DllImport("sdggnugo")]
+        public static extern int Add(int x, int y);
+
+        [DllImport("sdggnugo")]
+        public static extern void SDGGoInit(int boardsize);
+        [DllImport("sdggnugo")]
+        public static extern float SDGGetScore();
+        [DllImport("sdggnugo")]
+        public static extern bool SDGPlayMove(int i, int j, int color);
+        #endregion
 
     }
 }
