@@ -207,8 +207,6 @@ namespace SDG {
             Point curIndex = Position2Index(mousePosition);
             mat.SetFloat("_mousePosX", GoPanel[curIndex.x, curIndex.y].pos.x);
             mat.SetFloat("_mousePosY", GoPanel[curIndex.x, curIndex.y].pos.y);
-
-            Debug.Log(SDGGetScore());
         }
 
         // 判断下子操作是否在棋盘区域
@@ -241,9 +239,6 @@ namespace SDG {
                 // 添加新棋子
                 Move newMove = GoPanel[index.x, index.y];
                 Moves.Add(newMove);
-                foreach (Move m in Moves) {
-                    Debug.Log("moved:" + m.player);
-                }
                 return true;
             }
             else

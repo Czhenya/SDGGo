@@ -15,6 +15,9 @@ using UnityEngine.SceneManagement;
                 // 选子
                 Panel.Ins.SelectMove(Input.mousePosition);
             }
+            if (Input.GetMouseButtonDown(1)) {
+                BackHome();
+            }
         }
 
         public void BackHome() {
