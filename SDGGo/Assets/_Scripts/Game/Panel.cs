@@ -56,6 +56,7 @@ public class Panel : Singleton<Panel>
     #region 对外接口函数
 
     // 落子操作
+    // 人人对战
     public void SetMove_H_H()
     {
         if (game.SetMove(game.player))
@@ -64,6 +65,7 @@ public class Panel : Singleton<Panel>
             game.PlayerChange();
         }
     }
+    // 人机对战
     void SetMove_H_C()
     {
         int huamnplayer = 1;
@@ -78,7 +80,7 @@ public class Panel : Singleton<Panel>
 
         StartCoroutine(GNUComputerMove());
     }
-
+    // 计算机落子
     IEnumerator GNUComputerMove() {
         yield return new WaitForSeconds(1);
         int computerplayer = 0;

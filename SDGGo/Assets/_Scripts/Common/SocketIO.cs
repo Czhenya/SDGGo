@@ -15,11 +15,6 @@ public class SocketIO : Singleton<SocketIO> {
 	void Start () {
         OpenSocket();
 	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 
     // 初始化并开始socket监听
     void OpenSocket() {

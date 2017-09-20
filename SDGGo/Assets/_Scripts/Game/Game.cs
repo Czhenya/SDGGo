@@ -4,32 +4,33 @@ using UnityEngine;
 using System.Runtime.InteropServices;
 
 /*
- *  y
- *   |
- *   |__________________________________________________(19,19)
- * 19|                                                  |
- * 18|                                                  |
- * 17|                                                  |
- * 16|       *              *                *          |
- * 15|                                                  |
- * 14|                                                  |
- * 13|                                                  |
- * 12|                                                  |
- * 11|                                                  |
- * 10|       *              *                *          |
- * 9 |                                                  |
- * 8 |                                                  |
- * 7 |                                                  |
- * 6 |                                                  |
- * 5 |                                                  |
- * 4 |                                                  |
- * 3 |       *              *                *          |
- * 2 |                                                  |
- * 1 |                                                  |
- * 0 |__________________________________________________|__> x
- *     0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+ *            y
+ *             |                    borderH
+ *             |__________________________________________________(19,19)
+ *           19|                                                  |
+ *           18|                                                  |
+ *           17|                                                  |
+ *           16|       *              *                *          |
+ *           15|                                                  |
+ *           14|                                                  |
+ *           13|                                                  |
+ *           12|                                                  |
+ *           11|                                                  |
+ *  borderW  10|       *              *                *          |  borderW
+ *           9 |                                                  |
+ *           8 |                                                  |
+ *           7 |                                                  |
+ *           6 |                                                  |
+ *           5 |                                                  |
+ *           4 |                                                  |
+ *           3 |       *              *                *          |
+ *           2 |                                                  |
+ *           1 |                                                  |
+ *           0 |__________________________________________________|__> x
+ *               0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+ *                                 borderH
+ *                                                                  
  */
-
 namespace SDG {
     public class Game
     {
@@ -43,7 +44,6 @@ namespace SDG {
         public float aspectRatio;     // 屏幕宽高比
         public float gap_height;      // 竖直方向棋子间隔
         public float gap_width;       // 水平方向棋子间隔
-
 
         public int moveTime;          // 落子时间
         public int timeUsed;          // 游戏已用时间
@@ -110,7 +110,7 @@ namespace SDG {
             // 初始化gnugo
             SDGGoInit(_scale);
         }
-
+        #region 工具函数
         // 获取玩家对手
         public int PlayerToogle()
         {
@@ -222,7 +222,9 @@ namespace SDG {
                 return false;
             }
         }
+#endregion
 
+        #region 落子函数
         // 本地棋盘落子操作
         public bool SetMove(Point index, int color) {
             // 更新棋盘棋子状态
@@ -277,6 +279,7 @@ namespace SDG {
         Point POS2XY(int POS) { return IJ2XY(I(POS),J(POS)); }
         int I(int pos) { return ((pos) / (19 + 1) - 1); }
         int J(int pos) { return ((pos) % (19 + 1) - 1); }
+#endregion
 
         #region 游戏算法
         // 判断落子是否合法

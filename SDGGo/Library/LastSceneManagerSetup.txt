@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/RoomSelect.unity
+- path: Assets/GAME_H_C.unity
   isLoaded: 1
   isActive: 1
