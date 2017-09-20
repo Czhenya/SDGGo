@@ -33,6 +33,7 @@ using System.Runtime.InteropServices;
 namespace SDG {
     public class Game
     {
+        public int gameType;          // 游戏类型：0-人人；1-人机；2-在线对战
         public int panelScale;        // 棋盘规模
         public int player;            // 当前棋手，1表示黑子，0表示白子
         public float borderW;         // 棋盘水平边界
@@ -59,12 +60,13 @@ namespace SDG {
         private List<Point> closedLibertyList = new List<Point>();
 
         // 构造函数
-        public Game(int _scale, float _borderW)
+        public Game(int _gametype,int _scale, float _borderW)
         {
             // 玩家
             player = 1;
             Players[0] = new Player("白", 0);
             Players[1] = new Player("黑", 1);
+            gameType = _gametype;
             // 棋盘规模
             panelScale = _scale;
             // 屏幕宽高比
@@ -134,11 +136,11 @@ namespace SDG {
         // 根据鼠标精确坐标获取棋盘棋子精确坐标
         public Move GetCoord(Vector2 mousePos)
         {
-            Point index = GetCoordIndex(mousePos);
+            Point index = Position2Index(mousePos);
             return GoPanel[index.x, index.y];
         }
         // 根据鼠标精确坐标获取棋盘整型坐标
-        public Point GetCoordIndex(Vector2 mousePos)
+        public Point Position2Index(Vector2 mousePos)
         {
             int x = (int)Mathf.Round(((mousePos.x - borderW) / gap_width));
             int y = (int)Mathf.Round((mousePos.y - borderH) / gap_height);
@@ -150,6 +152,16 @@ namespace SDG {
             if (y >= panelScale) y = panelScale - 1;
 
             return new Point(x, y);
+        }
+
+        // 整形坐标转精确坐标
+        public Vector2 Index2Position(Point index) {
+            if (index.x < 0 || index.x >= panelScale || index.y < 0 || index.y > panelScale) return new Vector2(0,0);
+
+            float x = borderW + index.x * gap_width;
+            float y = borderH + index.y * gap_height;
+
+            return new Vector2(x,y);
         }
 
         // 获得指定位置的棋子状态
@@ -192,9 +204,11 @@ namespace SDG {
             mat.SetInt("_StepsWhite", moves_white.Count);
 
             // 鼠标点击棋子坐标
-            Point curIndex = GetCoordIndex(mousePosition);
+            Point curIndex = Position2Index(mousePosition);
             mat.SetFloat("_mousePosX", GoPanel[curIndex.x, curIndex.y].pos.x);
             mat.SetFloat("_mousePosY", GoPanel[curIndex.x, curIndex.y].pos.y);
+
+            Debug.Log(SDGGetScore());
         }
 
         // 判断下子操作是否在棋盘区域
@@ -211,29 +225,25 @@ namespace SDG {
             }
         }
 
-        // 落子操作
-        public bool SetMove(ref Material mat)
-        {
-            Point index = GetCoordIndex(mousePosition);
+        // 本地棋盘落子操作
+        public bool SetMove(Point index, int color) {
             // 更新棋盘棋子状态
             int curplayer = GoPanel[index.x, index.y].player;
             // 只能落在无子位置
             if (curplayer != -1) return false;
-            GoPanel[index.x, index.y].player = player;
+            GoPanel[index.x, index.y].player = color;
             // 尝试提子
             CheckNoLiberty(index);
             // 落子合法性
             if (IsOperationAllowed(mousePosition))
             {
-                Point gnup = XY2IJ(index);
-                if (!SDGPlayMove(index.x, index.y, player)) return false;
-                Debug.Log(SDGGetScore());
-
+                if (!SetGNUGoMove(index,color)) return false;
                 // 添加新棋子
                 Move newMove = GoPanel[index.x, index.y];
                 Moves.Add(newMove);
-                // 传数据给shader
-                UpdateShader(ref mat);
+                foreach (Move m in Moves) {
+                    Debug.Log("moved:" + m.player);
+                }
                 return true;
             }
             else
@@ -244,10 +254,34 @@ namespace SDG {
             }
         }
 
-        Point XY2IJ(Point p)
+        // 本地当前鼠标位置指定颜色落子
+        public bool SetMove(int color)
         {
-            return new Point(panelScale - p.y, p.x);
+            Point index = Position2Index(mousePosition);
+            return SetMove(index, color);
         }
+
+        // 在gnugo棋盘指定位置落子
+        public bool SetGNUGoMove(Point index, int color) {
+            Point gnup = XY2IJ(index);
+            if (SDGPlayMove(gnup.x, gnup.y, color))
+                return true;
+            return false;
+        }
+
+        // gnugo智能计算指定颜色最优的落子点落子
+        public Point GetGenComputerMove(int color) {
+            int genm = SDGGenComputerMove(color);
+            Point p = POS2XY(genm);
+            return p;
+        }
+
+        // 坐标转换
+        Point XY2IJ(Point p) { return new Point(panelScale -1 - p.y, p.x); }
+        Point IJ2XY(int i, int j) { return new Point(j, panelScale -1 - i); }
+        Point POS2XY(int POS) { return IJ2XY(I(POS),J(POS)); }
+        int I(int pos) { return ((pos) / (19 + 1) - 1); }
+        int J(int pos) { return ((pos) % (19 + 1) - 1); }
 
         #region 游戏算法
         // 判断落子是否合法
@@ -267,7 +301,7 @@ namespace SDG {
             */
 
             // 3. 所在棋串是否有气
-            Point index = GetCoordIndex(mousePos);
+            Point index = Position2Index(mousePos);
             if (!IsLibertyEnough(index))
             {
                 Debug.Log("所在棋串无气，请下在别处！");
@@ -320,12 +354,12 @@ namespace SDG {
             LibertyProcess(new Point(start.x + 1, start.y), curplayer, ref liberty);
 
             // 当前棋子进入closed表
-            closedList.Add(GetCoordIndex(openList[0].pos));
+            closedList.Add(Position2Index(openList[0].pos));
             openList.RemoveAt(0);
 
             if (openList.Count != 0)
             {
-                return liberty + GetLiberty(GetCoordIndex(openList[0].pos));
+                return liberty + GetLiberty(Position2Index(openList[0].pos));
             }
             else
             {
@@ -394,7 +428,7 @@ namespace SDG {
                     Debug.Log("断气棋子点" + i + ":(" + closedList[i].x + ", " + closedList[i].y + ")");
                     for (int j = 0; j < Moves.Count; ++j)
                     {
-                        Point index = GetCoordIndex(Moves[j].pos);
+                        Point index = Position2Index(Moves[j].pos);
                         if (closedList[i].x == index.x && closedList[i].y == index.y)
                         {
                             // 从已下棋子中移除
@@ -414,12 +448,21 @@ namespace SDG {
         [DllImport("sdggnugo")]
         public static extern int Add(int x, int y);
 
+        // 初始化gnugo
         [DllImport("sdggnugo")]
         public static extern void SDGGoInit(int boardsize);
+
+        // 获取当前打分，正数黑子领先，负数白子领先
         [DllImport("sdggnugo")]
         public static extern float SDGGetScore();
+
+        // 在gnugo棋盘上指定位置落子，并返回是否落子成功
         [DllImport("sdggnugo")]
         public static extern bool SDGPlayMove(int i, int j, int color);
+
+        // gnugo落子一步并返回一维落子坐标，如果落子失败返回-1
+        [DllImport("sdggnugo")]
+        public static extern int SDGGenComputerMove(int color);
         #endregion
 
     }

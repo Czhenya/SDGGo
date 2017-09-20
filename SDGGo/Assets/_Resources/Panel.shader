@@ -57,7 +57,6 @@ Shader "Custom/Panel" {
 				uniform float4 _MovesBlack[19*19];
 				uniform float4 _MovesWhite[19*19];
 				uniform float _worms[19 * 19];  // 形势
-				uniform int _lastPlayer;
 				uniform float _mousePosX;
 				uniform float _mousePosY;
 				uniform int _StepsBlack;
@@ -141,7 +140,7 @@ Shader "Custom/Panel" {
 						}
 					}
 					// 最后一个棋子的边框
-					float2 lastPos = float2(_mousePosX, _mousePosY / aspectRatio);//(_lastPlayer == 1) ? float2(_MovesWhite[_StepsWhite - 1].x, _MovesWhite[_StepsWhite - 1].y / aspectRatio) : float2(_MovesBlack[_StepsBlack - 1].x, _MovesBlack[_StepsBlack - 1].y / aspectRatio);
+					float2 lastPos = float2(_mousePosX, _mousePosY / aspectRatio);
 					bool topBottomCon = (pixelP.y > lastPos.y - _moveR) && (pixelP.y < lastPos.y + _moveR);
 					bool leftRightCon = (pixelP.x > lastPos.x - _moveR) && (pixelP.x < lastPos.x + _moveR);
 					bool left = pixelP.x < (lastPos.x - _moveR) && pixelP.x >(lastPos.x - _moveR - _stoneBorderWidth) && topBottomCon;

@@ -15,12 +15,16 @@ public class MenuManager : MonoBehaviour {
 		
 	}
 
-    public void OffLineGame() {
-        SceneManager.LoadScene("Game");
+    public void GameHH() {
+        SceneManager.LoadScene("GAME_H_H");
     }
 
-    public void OnlineGame() { 
-        
+    public void GameHC() {
+        SceneManager.LoadScene("GAME_H_C");
+    }
+
+    public void OnlineGame() {
+        SceneManager.LoadScene("RoomSelect");
     }
 
 }

@@ -17,12 +17,6 @@ using UnityEngine.SceneManagement;
             }
         }
 
-        // 落子
-        public void ConfirmMove()
-        {
-            Panel.Ins.SetMove();
-        }
-
         public void BackHome() {
             SceneManager.LoadScene("Menu");
         }
