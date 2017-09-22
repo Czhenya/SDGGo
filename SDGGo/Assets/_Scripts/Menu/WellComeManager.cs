@@ -93,6 +93,9 @@ public class WellComeManager : MonoBehaviour
     /// </summary>
     public void Login()
     {
+        SceneManager.LoadScene("Menu");
+        /*
+        SocketIO.Ins.OpenSocket();
         string uname = username.text;
         string upwd = password.text;
         CurrentPlayer.Ins.user.username = uname;
@@ -106,12 +109,14 @@ public class WellComeManager : MonoBehaviour
         else {
             Tip("网络尚未连接，请稍后再试！");
         }
+        */
     }
 
     /// <summary>
     /// 注册
     /// </summary>
     public void SignUp() {
+        SocketIO.Ins.OpenSocket();
         string uname = username.text;
         string upwd = password.text;
         ParamBase param = new ParamBase();

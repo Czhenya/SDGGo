@@ -45,10 +45,11 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
         // 监听创建房间响应
         SocketIO.Ins.sdgSocket.On("RetCreateRoom", (data)=> {
             Debug.Log("创建房间响应！");
-            Dictionary<string, object> dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(data.ToString());
-            string code = dic["code"].ToString();
-            if (code == "0") {
-                lock (locker) {
+            lock (locker) {
+                Dictionary<string, object> dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(data.ToString());
+                string code = dic["code"].ToString();
+                if (code == "0")
+                {
                     roomid = int.Parse(dic["roomid"].ToString());
                     CurrentPlayer.Ins.roomId = roomid;
                     CurrentPlayer.Ins.isRoomOwner = true;
@@ -81,13 +82,13 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
 
         // 进入房间
         if (roomid != -1) {
-            CurrentPlayer.Ins.roomId = roomid;
-            EnterRoom(roomid);
+            EnterRoom();
         }
 	}
 
     // 请求房间列表
     public void GetRoomList() {
+        SocketIO.Ins.OpenSocket();
         // 请求房间列表
         if (SocketIO.isConnected)
         {
@@ -98,6 +99,7 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
 
     // 创建新房间
     public void CreateRoom() {
+        SocketIO.Ins.OpenSocket();
         if (SocketIO.isConnected)
         {
             string paramstr = JsonConvert.SerializeObject(param);
@@ -108,8 +110,12 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
     // 选择进入房间
     public void EnterRoom(int index) {
         RoomInfo info = roomList[index];
-        int roomid = info.roomid;
-        Debug.Log("enter room:"+roomid);
+        roomid = info.roomid;
+        EnterRoom();
+    }
+    void EnterRoom() {
+        Debug.Log("enter room:" + roomid);
+        CurrentPlayer.Ins.roomId = roomid;
         SceneManager.LoadScene("GAME_ROOM");
     }
 }

@@ -25,7 +25,7 @@ public class SocketIO : Singleton<SocketIO> {
 
     #region 对外接口
     // 初始化并开始socket监听
-    void OpenSocket()
+    public void OpenSocket()
     {
         if (sdgSocket == null)
         {

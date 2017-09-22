@@ -8,26 +8,22 @@ using SDG;
 [ExecuteInEditMode]
 public class Panel : Singleton<Panel>
 {
-    // UI
-    public int GameType;
-    public Material mat;
-    public Image stone;
-    public Text[] playerText;
-    public Text timerLabel;
-    public Text ScoreLabel;
-    public Text roomidLabel;
-    public Text localplayerinfo;
+    public int GameType;               // 游戏类型：0-人人；1-人机；2-在线对战
+    public Material mat;               // 棋盘材质
+    public Image stone;                // 棋子指示
+    public Text timerLabel;            // 计时标签
+    public Text ScoreLabel;            // 打分标签
+    public Text roomidLabel;           // 房间号标签
+    public Text[] playerText;          // 玩家信息
+    public Text localplayerinfo;       // 本地玩家信息
 
-    private Game game;                // 游戏对象
-    private Timer timer;              // 计时器对象
+    private Game game;                 // 游戏实例
+    private Timer timer;               // 计时器对象
 
     // 在线对战:
-    // 本地棋手颜色
-    int localPlayer = 1;
-    // 对手落子位置
-    Point oppenPos = new Point(0,0);
-    // 对手是否已落子
-    bool isOppenMoved = false;
+    int localPlayer = 1;               // 本地棋手颜色
+    Point oppenPos = new Point(0,0);   // 服务器传来的对手落子位置
+    bool isOppenMoved = false;         // 对手是否已落子
 
     #region 脚本生命周期
     // 初始化
@@ -139,6 +135,9 @@ public class Panel : Singleton<Panel>
     // 选子操作
     public void SelectMove(Vector2 mousePos)
     {
+        // 非游戏状态
+        if (game.gameState != 1) return;
+
         // 鼠标坐标转换到0-1空间
         Vector2 curMousePos = new Vector2(mousePos.x / (float)Screen.width, mousePos.y / (float)Screen.height);
         Point curIndex = game.Position2Index(curMousePos);
@@ -251,6 +250,7 @@ public class Panel : Singleton<Panel>
 
     // 游戏开始
     void StartGame() {
+        game.gameState = 1;
        // timer.StartTimer();
     }
     // 玩家切换

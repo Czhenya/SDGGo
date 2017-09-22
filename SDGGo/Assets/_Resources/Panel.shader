@@ -54,9 +54,8 @@ Shader "Custom/Panel" {
 				uniform float _borderWidth;
 				uniform float _stoneBorderWidth;
 
-				uniform float4 _MovesBlack[19*19];
-				uniform float4 _MovesWhite[19*19];
-				uniform float _worms[19 * 19];  // 形势
+				uniform float4 _MovesBlack[181];
+				uniform float4 _MovesWhite[181];
 				uniform float _mousePosX;
 				uniform float _mousePosY;
 				uniform int _StepsBlack;
@@ -149,20 +148,6 @@ Shader "Custom/Panel" {
 					bool bottom = pixelP.y < (lastPos.y - _moveR) && pixelP.y >(lastPos.y - _moveR - _stoneBorderWidth) && leftRightCon;
 					if (left || right || top || bottom)
 						finalColor = _stoneBorderColor;
-
-					// 绘制形势
-					//for (int x = 0; x < 1; ++x) {
-					//	for (int y = 0; y < 1;++y){
-							//if ((int)(_worms[x*_panelScale + y]) == -1) return finalColor;
-							//float4 wormColor;
-							//if ((int)(_worms[x*_panelScale + y]) == 0) wormColor = _whiteColor;
-							//if ((int)(_worms[x*_panelScale + y]) == 1) wormColor = _blackColor;
-						//	float pos = float2(borderW, borderH / aspectRatio);
-						//	if (length(pos - pixelP) <= _moveR*2){
-						//		finalColor = _blackColor;
-						//	}
-						//}
-					//}
 
 					return finalColor;
 				}

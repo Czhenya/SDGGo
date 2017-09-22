@@ -35,6 +35,7 @@ namespace SDG {
     public class Game
     {
         public int gameType;          // 游戏类型：0-人人；1-人机；2-在线对战
+        public int gameState;         // 当前游戏状态： 0-游戏未开始；1-游戏中；3-游戏结束
         public int panelScale;        // 棋盘规模
         public int player;            // 当前棋手，1表示黑子，0表示白子
         public float borderW;         // 棋盘水平边界
@@ -59,16 +60,17 @@ namespace SDG {
         private List<Point> closedList = new List<Point>();
         private List<Point> closedLibertyList = new List<Point>();
 
-        // 构造函数
+        // 构造函数，初始化游戏实例
         public Game(int _gametype,int _scale, float _borderW)
         {
-            // 玩家
-            player = 1;
-            Players[0] = new Player("白", 0);
-            Players[1] = new Player("黑", 1);
-            gameType = _gametype;
-            // 棋盘规模
-            panelScale = _scale;
+            player = 1;               // 默认黑子先手
+            gameType = _gametype;     // 初始化游戏类型
+            gameState = 0;            // 初始化游戏状态
+            panelScale = _scale;      // 棋盘规模
+            moveTime = 10;            // 落子时间限制
+            timeUsed = 0;
+
+            // 棋盘数据计算：
             // 屏幕宽高比
             aspectRatio = (float)Screen.width / (float)Screen.height;
             // 从shader获取棋盘横向边界
@@ -82,9 +84,6 @@ namespace SDG {
             // 棋子间隔
             gap_height = panelHeight / (panelScale - 1);
             gap_width = panelWidth / (panelScale - 1);
-
-            moveTime = 10;
-            timeUsed = 0;
 
             // 初始化棋盘棋子对象
             for (int i = 0; i < panelScale; ++i)
@@ -237,7 +236,9 @@ namespace SDG {
             // 落子合法性
             if (IsOperationAllowed(mousePosition))
             {
+                // GNUGo落子确认
                 if (!SetGNUGoMove(index,color)) return false;
+
                 // 添加新棋子
                 Move newMove = GoPanel[index.x, index.y];
                 Moves.Add(newMove);
