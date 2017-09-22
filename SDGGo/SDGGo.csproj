@@ -92,6 +92,7 @@
     <Compile Include="Assets\_Scripts\Common\SocketIO.cs" />
     <Compile Include="Assets\_Scripts\Common\Timer.cs" />
     <Compile Include="Assets\_Scripts\Game\Game.cs" />
+    <Compile Include="Assets\_Scripts\Game\GoUIManager.cs" />
     <Compile Include="Assets\_Scripts\Game\Panel.cs" />
     <Compile Include="Assets\_Scripts\Game\UIEventManager.cs" />
     <Compile Include="Assets\_Scripts\Menu\MenuManager.cs" />
