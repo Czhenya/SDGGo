@@ -48,7 +48,19 @@ namespace SDG
     public class User {
         public string username;
         public string password;
+        public string userid;
         public string token;
+    }
+
+    // 房间信息
+    public class RoomInfo {
+        public int roomid;
+        public string owner;
+
+        public RoomInfo(int _id,string _owner) {
+            roomid = _id;
+            _owner = _owner;
+        }
     }
 
     public class GOClass

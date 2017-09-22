@@ -2,19 +2,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-
 namespace SDG {
-    public class ParamPlayMove {
-        public string uid;
+
+    public class ParamBase {
+        public string name;
+        public string password;
+        public int userid;
+        public string token;
+    }
+
+    public class ParamPlayMove:ParamBase
+    {
         public int x;
         public int y;
     }
 
-    public class ParamLogin {
-        public string name;
-    }
-
-public class Params
+    public class Params
     {
     }
 }

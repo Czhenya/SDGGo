@@ -9,55 +9,63 @@ public class SocketIO : Singleton<SocketIO> {
 
     string serverURL = "http://10.246.60.27:8000";
 
-    Socket sdgSocket;
+    public Socket sdgSocket;
+    public static bool isConnected = false;
 
 	// Use this for initialization
 	void Start () {
         OpenSocket();
 	}
 
+    void OnDestroy()
+    {
+        CloseSocket();
+    }
+
+
+    #region 对外接口
     // 初始化并开始socket监听
-    void OpenSocket() {
-        if (sdgSocket == null) {
+    void OpenSocket()
+    {
+        if (sdgSocket == null)
+        {
             sdgSocket = IO.Socket(serverURL);
 
-            sdgSocket.On(Socket.EVENT_CONNECT,()=> {
+            sdgSocket.On(Socket.EVENT_CONNECT, () => {
                 Debug.Log("socket connected!");
-            });
-
-            sdgSocket.On("ReqSignUp", (data) => {
-                object obj = data;
-            });
-
-            sdgSocket.On("ReqSignIn", (data) => {
-                object obj = data;
+                isConnected = true;
             });
         }
     }
 
     // 断开socket监听
-    void CloseSocket() {
-        if (sdgSocket != null) {
+    void CloseSocket()
+    {
+        if (sdgSocket != null)
+        {
             sdgSocket.Disconnect();
             sdgSocket = null;
+            isConnected = false;
         }
+        Debug.Log("socket closed!");
     }
-
-#region 对外接口
-    // 对外接口
-    public void Login(ParamLogin param) {
+    // 登录
+    public void Login(ParamBase param) {
         string paramstr = JsonConvert.SerializeObject(param);
-        Debug.Log(paramstr);
+        
         if (sdgSocket != null) {
+            Debug.Log("登录请求参数：" + paramstr);
             sdgSocket.Emit("ReqSignIn",paramstr);
         }
     }
 
-    public void Signup(ParamLogin param)
+    public void Signup(ParamBase param)
     {
         string paramstr = JsonConvert.SerializeObject(param);
+        
         if (sdgSocket != null)
         {
+            Debug.Log("注册请求参数：" + paramstr);
             sdgSocket.Emit("ReqSignUp", paramstr);
         }
     }

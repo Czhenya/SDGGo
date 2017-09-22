@@ -3,41 +3,113 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using Newtonsoft.Json;
+using SDG;
 
 public class RoomSelectManager : Singleton<RoomSelectManager> {
 
-    public GameObject RoomPrefab;
-    public Button[] roomButtons;
-    List<string> roomList;
+    public GameObject RoomPrefab = null;
+    public Button[] roomButtons = null;
+
+    List<RoomInfo> roomList = new List<RoomInfo>();   // 房间列表容器
+    ParamBase param = new ParamBase();                // 参数对象
+    bool request = false;                             // 请求房间列表状态
+    int roomid = -1;                                  // 进入房间号
+    object locker = new object();
+
 	// Use this for initialization
 	void Start () {
         // 请求房间列表
-        roomList = new List<string>();
-        roomList.Add("111");
-        roomList.Add("222");
-        roomList.Add("333");
-        roomList.Add("444");
-        roomList.Add("555");
-        for (int i= 0; i<roomList.Count;++i) {
-            roomButtons[i].gameObject.SetActive(true);
-            roomButtons[i].gameObject.GetComponentInChildren<Text>().text = roomList[i];
-        }
-	}
+        //roomList.Add(new RoomInfo(111,"user1"));
+        //roomList.Add(new RoomInfo(222, "user2"));
+
+        param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
+        param.token = CurrentPlayer.Ins.user.token;
+
+        // 监听房间列表响应
+        SocketIO.Ins.sdgSocket.On("RetGetRoomList",(data)=> {
+            Debug.Log("获取房间列表响应！");
+            lock (locker) {
+                Dictionary<string, object> dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(data.ToString());
+                string code = dic["code"].ToString();
+                if (code == "0")
+                {
+                    object objroomlist = dic["roomList"];
+                    List<RoomInfo> roomObjs = JsonConvert.DeserializeObject<List<RoomInfo>>(objroomlist.ToString());
+                    roomList.AddRange(roomObjs);
+                    request = true;
+                }
+            }
+        });
+
+        // 监听创建房间响应
+        SocketIO.Ins.sdgSocket.On("RetCreateRoom", (data)=> {
+            Debug.Log("创建房间响应！");
+            Dictionary<string, object> dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(data.ToString());
+            string code = dic["code"].ToString();
+            if (code == "0") {
+                lock (locker) {
+                    roomid = int.Parse(dic["roomid"].ToString());
+                    CurrentPlayer.Ins.roomId = roomid;
+                    CurrentPlayer.Ins.isRoomOwner = true;
+                }
+            }
+        });
+
+        // 请求房间列表
+        GetRoomList();
+        
+    }
 	
 	// Update is called once per frame
 	void Update () {
         if (Input.GetMouseButtonDown(1)) {
             SceneManager.LoadScene("Menu");
         }
+
+        // 显示房间列表
+        if (request) {
+            request = false;
+            for (int i = 0; i < roomList.Count; ++i)
+            {
+                if (i > 10) break;
+
+                roomButtons[i].gameObject.SetActive(true);
+                roomButtons[i].gameObject.GetComponentInChildren<Text>().text = "room" + roomList[i].roomid;
+            }
+        }
+
+        // 进入房间
+        if (roomid != -1) {
+            CurrentPlayer.Ins.roomId = roomid;
+            EnterRoom(roomid);
+        }
 	}
 
-    
-
-    // 创建新房间
-    public void CreateRoom() { 
+    // 请求房间列表
+    public void GetRoomList() {
+        // 请求房间列表
+        if (SocketIO.isConnected)
+        {
+            string paramstr = JsonConvert.SerializeObject(param);
+            SocketIO.Ins.sdgSocket.Emit("ReqGetRoomList", paramstr);
+        }
     }
 
+    // 创建新房间
+    public void CreateRoom() {
+        if (SocketIO.isConnected)
+        {
+            string paramstr = JsonConvert.SerializeObject(param);
+            SocketIO.Ins.sdgSocket.Emit("ReqCreateRoom", paramstr);
+        }
+    }
+
+    // 选择进入房间
     public void EnterRoom(int index) {
-        Debug.Log("enter room:"+roomList[index]);
+        RoomInfo info = roomList[index];
+        int roomid = info.roomid;
+        Debug.Log("enter room:"+roomid);
+        SceneManager.LoadScene("GAME_ROOM");
     }
 }
