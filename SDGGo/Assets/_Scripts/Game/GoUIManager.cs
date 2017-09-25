@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using SDG;
 
 public class GoUIManager : Singleton<GoUIManager> {
 
     public GameObject whiteStone;
     public GameObject blackStone;
+    public Text coortext;
     // 四个角
     public Transform LTCorner, RTCorner, LBCorner, RBCorner;
 
@@ -30,8 +32,9 @@ public class GoUIManager : Singleton<GoUIManager> {
             {
                 Vector3 hitpos = hit.point;//得到碰撞点的坐标
                 Point mouseIndex = Pos2Index(hitpos);
+                coortext.text = mouseIndex.x + "," + mouseIndex.y;
                 setMove(Pos2PanelPos(hitpos), Panel.Ins.game.player);
-                Panel.Ins.SelectMove(mouseIndex);
+                StartCoroutine(SetGNUMove(mouseIndex));
             }
         }
     }
@@ -80,6 +83,12 @@ public class GoUIManager : Singleton<GoUIManager> {
     // 精确坐标->棋盘精确坐标
     public Vector2 Pos2PanelPos(Vector2 pos) {
         return Index2PanelPos(Pos2Index(pos));
+    }
+
+    IEnumerator SetGNUMove(Point index) {
+        yield return new WaitForSeconds(0.1f);
+        Panel.Ins.SelectMove(index);
+        yield return 0;
     }
 
     public void setMove(Point index, int color) {

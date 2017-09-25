@@ -77,13 +77,13 @@
       <HintPath>Library\UnityAssemblies\UnityEngine.HoloLens.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>Assets\Plugin\Newtonsoft.Json.dll</HintPath>
+      <HintPath>Assets\Plugins\Android\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="SocketIoClientDotNet">
-      <HintPath>Assets\Plugin\SocketIoClientDotNet.dll</HintPath>
+      <HintPath>Assets\Plugins\Android\SocketIoClientDotNet.dll</HintPath>
     </Reference>
     <Reference Include="WebSocket4Net">
-      <HintPath>Assets\Plugin\WebSocket4Net.dll</HintPath>
+      <HintPath>Assets\Plugins\Android\WebSocket4Net.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
