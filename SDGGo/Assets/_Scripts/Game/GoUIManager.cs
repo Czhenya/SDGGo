@@ -7,10 +7,9 @@ public class GoUIManager : Singleton<GoUIManager> {
 
     public GameObject whiteStone;
     public GameObject blackStone;
-
-    public Transform LTCorner, RTCorner, LBCorner, RBColor;
-    // 四个角屏幕坐标
-    Vector3 LTPos, RTPos,LBPos,RBPos;
+    public Transform GoPanel;
+    // 四个角
+    public Transform LTCorner, RTCorner, LBCorner, RBCorner;
 
     int panelScale;
     float panelBorder;               // 棋盘边界
@@ -25,41 +24,50 @@ public class GoUIManager : Singleton<GoUIManager> {
 	
 	// Update is called once per frame
 	void Update () {
+
         if (Input.GetMouseButtonDown(0)) {
-            mousePosition = Input.mousePosition;
-            setMove(mousePosition,1);
+            RaycastHit hit;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out hit))
+            {
+                Vector3 hitpos = hit.point;//得到碰撞点的坐标
+                setMove(TransformMousePos(hitpos), 1);
+            }
         }
     }
 
     void panelInit() {
         panelScale = 19;
-        // 获取四个角的屏幕坐标
-        LTPos = Camera.main.WorldToScreenPoint(LTCorner.position);
-        LTPos = Camera.main.WorldToScreenPoint(LTCorner.position);
-        LTPos = Camera.main.WorldToScreenPoint(LTCorner.position);
-        LTPos = Camera.main.WorldToScreenPoint(LTCorner.position);
-        panelWidth = RTPos.x - LTPos.x;
+        panelBorder = 0.1f;
+        panelWidth = RTCorner.position.x - LTCorner.position.x;
         gapWidth = panelWidth / (panelScale-1);
+    }
+    // 鼠标屏幕坐标->世界坐标
+    Vector3 TransformMousePos(Vector3 mousepos) {
+        // 鼠标坐标原点转换到棋盘坐下角
+        Vector3 lbmousepos = new Vector3(mousepos.x+panelWidth/2, mousepos.y+panelWidth/2, mousepos.z);
+        Debug.Log("落子坐标："+lbmousepos);
+        return lbmousepos;
     }
 
     // 是否在棋盘内
     bool isInPanel(Vector2 p) {
-        if (p.x < LTPos.x-panelBorder || p.x > RTPos.x+panelBorder || p.y < RBPos.y-panelBorder || p.y > RTPos.y+panelBorder)
+        if (p.x < LTCorner.position.x - panelBorder || p.x > RTCorner.position.x + panelBorder || p.y < RBCorner.position.y - panelBorder || p.y >RTCorner.position.y + panelBorder)
             return false;
         return true;
     }
 
     // 整型坐标->棋盘棋子精确坐标
-    public Vector2 Index2PanelPos(Point index)
+    public Vector3 Index2PanelPos(Point index)
     {
-        Point localIndex = new Point(index.x - panelScale/2, index.y - panelScale/2);
-        return new Vector2(LBPos.x + gapWidth*index.x, LBPos.y + gapWidth * index.y);
+       // Point localIndex = new Point(index.x - panelScale/2, index.y - panelScale/2);
+        return new Vector3(LBCorner.position.x + gapWidth*index.x,LBCorner.position.y + gapWidth * index.y,LBCorner.position.z);
     }
     // 精确坐标->棋盘整型坐标
-    public Point Pos2Index(Vector2 mousePos)
+    public Point Pos2Index(Vector3 mousePos)
     {
-        int x = (int)Mathf.Round(((mousePos.x - LBPos.x) / gapWidth));
-        int y = (int)Mathf.Round((mousePos.y - LBPos.y) / gapWidth);
+        int x = (int)Mathf.Round(((mousePos.x) / gapWidth));
+        int y = (int)Mathf.Round((mousePos.y) / gapWidth);
 
         if (x < 0) x = 0;
         if (x >= panelScale) x = panelScale - 1;
@@ -70,17 +78,18 @@ public class GoUIManager : Singleton<GoUIManager> {
         return new Point(x, y);
     }
     // 精确坐标->棋盘棋子精确坐标
-    public Vector2 Pos2PnaelPos(Vector2 mousePos)
+    public Vector3 Pos2PnaelPos(Vector3 mousePos)
     {
         return Index2PanelPos(Pos2Index(mousePos));
     }
 
     void setMove(Point mousePos, int color) {
-        Vector2 p2d = Index2PanelPos(mousePos);
+        Vector3 p2d = Index2PanelPos(mousePos);
         GameObject stone = color == 1 ? blackStone : whiteStone;
-        Instantiate(stone, new Vector3(p2d.x, p2d.y, -10), stone.transform.rotation);
+        Instantiate(stone, p2d, stone.transform.rotation);
     }
-    void setMove(Vector2 mousePos, int color) {
-        setMove(Pos2Index(mousePos), color);
+    void setMove(Vector3 mousePos, int color) {
+        Point index = Pos2Index(mousePos);
+        setMove(index,color);
     }
 }
