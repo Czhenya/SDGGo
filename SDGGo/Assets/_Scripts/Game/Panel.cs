@@ -9,7 +9,6 @@ using SDG;
 public class Panel : Singleton<Panel>
 {
     public int GameType;               // 游戏类型：0-人人；1-人机；2-在线对战
-    public Material mat;               // 棋盘材质
     public Image stone;                // 棋子指示
     public Text timerLabel;            // 计时标签
     public Text ScoreLabel;            // 打分标签
@@ -17,12 +16,12 @@ public class Panel : Singleton<Panel>
     public Text[] playerText;          // 玩家信息
     public Text localplayerinfo;       // 本地玩家信息
 
-    private Game game;                 // 游戏实例
+    public Game game;                 // 游戏实例
     private Timer timer;               // 计时器对象
 
     // 在线对战:
     int localPlayer = 1;               // 本地棋手颜色
-    Point oppenPos = new Point(0,0);   // 服务器传来的对手落子位置
+    Point oppenPos = new Point(0, 0);   // 服务器传来的对手落子位置
     bool isOppenMoved = false;         // 对手是否已落子
 
     #region 脚本生命周期
@@ -30,7 +29,6 @@ public class Panel : Singleton<Panel>
     void Start()
     {
         InitialData();
-        InitialAllShaderData();
         StartGame();
     }
 
@@ -42,11 +40,12 @@ public class Panel : Singleton<Panel>
         localplayerinfo.text = "本地玩家信息：\n" + CurrentPlayer.Ins.user.username + "\n" + localcolor;
 
         // 对手落子
-        if (isOppenMoved) {
+        if (isOppenMoved)
+        {
             isOppenMoved = false;
             if (game.SetMove(oppenPos, game.player))
             {
-                game.UpdateShader(ref mat);
+                // UI move
                 game.PlayerChange();
             }
         }
@@ -54,13 +53,7 @@ public class Panel : Singleton<Panel>
     // 固定时间间隔回调
     void FixedUpdate()
     {
-       // timer.UpdateTimer();
-    }
-
-    // 绘制shader材质
-    void OnRenderImage(RenderTexture src, RenderTexture des)
-    {
-        Graphics.Blit(src, des, mat);
+        // timer.UpdateTimer();
     }
 
     void OnDestroy()
@@ -76,183 +69,159 @@ public class Panel : Singleton<Panel>
 
     // 落子操作
     // 人人对战
-    public void SetMove_H_H()
+    public void SetMove_H_H(Point index)
     {
-        if (game.SetMove(game.player))
+        if (game.SetMove(index, game.player))
         {
-            game.UpdateShader(ref mat);
             game.PlayerChange();
         }
     }
     // 人机对战
-    void SetMove_H_C()
+    void SetMove_H_C(Point index)
     {
         int huamnplayer = 1;
-        if (game.player == huamnplayer && game.SetMove(huamnplayer))
+        if (game.player == huamnplayer && game.SetMove(index, huamnplayer))
         {
-            game.UpdateShader(ref mat);
             game.PlayerChange();
         }
-        else {
+        else
+        {
+            GoUIManager.Ins.deleteMove(index);
             return;
         }
 
         StartCoroutine(GNUComputerMove());
     }
     // 在线对战
-    void SetMove_Online() {
-        if (game.player == localPlayer) {
-            if (game.SetMove(game.player))
+    void SetMove_Online(Point index)
+    {
+        if (game.player == localPlayer)
+        {
+            if (game.SetMove(index, game.player))
             {
-                game.UpdateShader(ref mat);
                 game.PlayerChange();
             }
             // 通知服务器
-            Point index = game.Position2Index(game.mousePosition);
             ParamPlayMove param = new ParamPlayMove();
             param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
             param.token = CurrentPlayer.Ins.user.token;
             param.x = index.x;
             param.y = index.y;
             string paramstr = JsonConvert.SerializeObject(param);
-            SocketIO.Ins.sdgSocket.Emit("ReqOperatePiece",paramstr);
+            SocketIO.Ins.sdgSocket.Emit("ReqOperatePiece", paramstr);
         }
     }
     // 计算机落子
-    IEnumerator GNUComputerMove() {
+    IEnumerator GNUComputerMove()
+    {
         yield return new WaitForSeconds(1);
         int computerplayer = 0;
         Point genm = game.GetGenComputerMove(computerplayer);
-        game.mousePosition = game.Index2Position(genm);
         if (game.player == computerplayer && game.SetMove(genm, computerplayer))
         {
-            game.UpdateShader(ref mat);
+            GoUIManager.Ins.setMove(genm, computerplayer);
             game.PlayerChange();
         }
         yield return 0;
     }
 
     // 选子操作
-    public void SelectMove(Vector2 mousePos)
+    public void SelectMove(Point mouseIndex)
     {
         // 非游戏状态
         if (game.gameState != 1) return;
 
         // 鼠标坐标转换到0-1空间
-        Vector2 curMousePos = new Vector2(mousePos.x / (float)Screen.width, mousePos.y / (float)Screen.height);
-        Point curIndex = game.Position2Index(curMousePos);
-        Point preIndex = game.Position2Index(game.mousePosition);
-        game.mousePosition = curMousePos;
-        if (curIndex.x == preIndex.x && curIndex.y == preIndex.y)
+        switch (game.gameType)
         {
-            switch (game.gameType)
-            {
-                case 0:
-                    SetMove_H_H();
-                    break;
-                case 1:
-                    SetMove_H_C();
-                    break;
-                case 2:
-                    SetMove_Online();
-                    break;
-                default:
-                    break;
-            }
-
-            float wscore = Game.SDGGetScore();
-            if (wscore > 0) {
-                ScoreLabel.text = "白棋领先" + wscore + "点！";
-            }
-            else {
-                float bscore = -wscore;
-                ScoreLabel.text = "黑棋领先" + bscore + "点！";
-            }
+            case 0:
+                SetMove_H_H(mouseIndex);
+                break;
+            case 1:
+                SetMove_H_C(mouseIndex);
+                break;
+            case 2:
+                SetMove_Online(mouseIndex);
+                break;
+            default:
+                break;
+        }
+        // 最新成绩结算
+        float wscore = Game.SDGGetScore();
+        if (wscore > 0)
+        {
+            ScoreLabel.text = "白棋领先" + wscore + "点！";
         }
         else
         {
-            game.mousePosition = curMousePos;
-            game.UpdateShader(ref mat);
+            float bscore = -wscore;
+            ScoreLabel.text = "黑棋领先" + bscore + "点！";
         }
     }
     #endregion
 
     #region 自定义初始化函数
     // 在线对战初始化
-    void OnlineInit() {
+    
+    void OnlineInit()
+    {
         // 房主先手
         if (CurrentPlayer.Ins.isRoomOwner)
         {
             game.Players[0] = new Player(CurrentPlayer.Ins.name, 1); // 房主执黑
             localPlayer = 1;
         }
-        else {
+        else
+        {
             game.Players[1] = new Player(CurrentPlayer.Ins.name,0);  // 客人执白
             localPlayer = 0;
         }
-        roomidLabel.text = "房间号："+CurrentPlayer.Ins.roomId.ToString();
+        roomidLabel.text = "房间号：" + CurrentPlayer.Ins.roomId.ToString();
 
         // 监听对手落子
-        SocketIO.Ins.sdgSocket.On("RetOperatePiece",(data)=> {
-            lock (oppenPos) {
+        SocketIO.Ins.sdgSocket.On("RetOperatePiece", (data) =>
+        {
+            lock (oppenPos)
+            {
                 oppenPos = new Point(0,0);
                 isOppenMoved = true;
             }
         });
     }
+    
     // 初始化
+    
     void InitialData()
     {
         // 初始化游戏
-        int scale = mat.GetInt("_panelScale");
-        float borderW = mat.GetFloat("_borderWidth");
-        game = new Game(GameType,scale, borderW);
+        int scale = GoUIManager.Ins.panelScale;
+        game = new Game(GameType, scale);
         // 在线对战
         if (GameType == 2) OnlineInit();
         // 初始化先手棋子颜色
         game.player = 1;
 
         // 注册计时事件
-       /* timer = new Timer(game.moveTime);
-        timer.tickEvent += OnTimeEnd;
-        timer.tickSeceondEvent += OnSecond;
-        timerLabel.text = timer._currentTime.ToString();*/
+        /* timer = new Timer(game.moveTime);
+         timer.tickEvent += OnTimeEnd;
+         timer.tickSeceondEvent += OnSecond;
+         timerLabel.text = timer._currentTime.ToString();
+         */
     }
+    
 
-    // 初始化shader待传数据
-    void InitialAllShaderData()
-    {
-        List<Vector4> v4s = new List<Vector4>();
-        // 传入九颗星的坐标给shader
-        for (int i = 0; i < 9; ++i)
-        {
-            v4s.Add(new Vector4(game.stars[i].pos.x, game.stars[i].pos.y, 0, 0));
-        }
-        mat.SetVectorArray("_Stars", v4s);
-
-        v4s.Clear();
-        for (int i = 0; i < game.panelScale * game.panelScale; ++i)
-        {
-            v4s.Add(new Vector4(0.1f, 0.1f, 0.1f, 0.1f));
-        }
-        mat.SetInt("_StepsWhite", 0);
-        mat.SetInt("_StepsBlack", 0);
-        mat.SetVectorArray("_MovesBlack", v4s);
-        mat.SetVectorArray("_MovesWhite", v4s);
-        mat.SetInt("_lastPlayer", 0);
-        mat.SetFloat("_mousePosX", -0.5f);
-        mat.SetFloat("_mousePosY", -0.5f);
-    }
 
     #endregion
 
     #region 自定义内部函数
 
     // 游戏开始
-    void StartGame() {
+    void StartGame()
+    {
         game.gameState = 1;
-       // timer.StartTimer();
+        // timer.StartTimer();
     }
+
     // 玩家切换
     void PlayerChange()
     {
@@ -266,14 +235,16 @@ public class Panel : Singleton<Panel>
         }
         game.PlayerChange();
 
+        /*
         timer.ResetTimer();
         timer.StartTimer();
         timerLabel.text = timer._currentTime.ToString();
+        */
     }
+    
     #endregion
 
-
-    #region 计时逻辑
+    #region 计时器逻辑
     void OnTimeEnd()
     {
         // Debug.Log("时间到！");
@@ -286,6 +257,5 @@ public class Panel : Singleton<Panel>
         game.timeUsed++;
         timerLabel.text = timer._currentTime.ToString();
     }
-
-    #endregion
+#endregion
 }

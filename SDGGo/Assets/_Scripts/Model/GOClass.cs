@@ -20,10 +20,10 @@ namespace SDG
     // 棋子数据结构
     public class Move
     {
-        public Vector2 pos;
+        public Point pos;
         public int player; // 0:白子 1:黑子 -1:无子
         public int worm;   // 形势值0
-        public Move(Vector2 _pos, int _player)
+        public Move(Point _pos,int _player)
         {
             pos = _pos;
             player = _player;

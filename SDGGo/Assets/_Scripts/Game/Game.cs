@@ -38,22 +38,13 @@ namespace SDG {
         public int gameState;         // 当前游戏状态： 0-游戏未开始；1-游戏中；3-游戏结束
         public int panelScale;        // 棋盘规模
         public int player;            // 当前棋手，1表示黑子，0表示白子
-        public float borderW;         // 棋盘水平边界
-        public float borderH;         // 棋盘竖直边界
-        public float panelWidth;      // 棋盘宽度
-        public float panelHeight;     // 棋盘高度
-        public float aspectRatio;     // 屏幕宽高比
-        public float gap_height;      // 竖直方向棋子间隔
-        public float gap_width;       // 水平方向棋子间隔
 
         public int moveTime;          // 落子时间
         public int timeUsed;          // 游戏已用时间
-        public Vector2 mousePosition; // 当前鼠标点击坐标
 
         public Player[] Players = new Player[2];       // 两个玩家
         public List<Move> Moves = new List<Move>();    // 已下棋子(按照落子顺序)
         public Move[,] GoPanel = new Move[19, 19];     // 整个棋盘棋子二维数组
-        public Move[] stars = new Move[9];             // 九星棋子集合
 
         // 作为队列结构的open表和close表，用于计算棋串的气
         private List<Move> openList = new List<Move>();
@@ -61,7 +52,7 @@ namespace SDG {
         private List<Point> closedLibertyList = new List<Point>();
 
         // 构造函数，初始化游戏实例
-        public Game(int _gametype,int _scale, float _borderW)
+        public Game(int _gametype,int _scale)
         {
             player = 1;               // 默认黑子先手
             gameType = _gametype;     // 初始化游戏类型
@@ -70,39 +61,12 @@ namespace SDG {
             moveTime = 10;            // 落子时间限制
             timeUsed = 0;
 
-            // 棋盘数据计算：
-            // 屏幕宽高比
-            aspectRatio = (float)Screen.width / (float)Screen.height;
-            // 从shader获取棋盘横向边界
-            borderW = _borderW;
-            // 计算棋盘宽度
-            panelWidth = 1 - 2 * borderW;
-            // 棋盘高度
-            panelHeight = panelWidth * aspectRatio;
-            // 棋盘纵向边界
-            borderH = (1 - panelHeight) / 2;
-            // 棋子间隔
-            gap_height = panelHeight / (panelScale - 1);
-            gap_width = panelWidth / (panelScale - 1);
-
             // 初始化棋盘棋子对象
             for (int i = 0; i < panelScale; ++i)
             {
                 for (int j = 0; j < panelScale; ++j)
                 {
-                    Vector2 pos = new Vector2(borderW + i * gap_width, borderH + j * gap_height);
-                    GoPanel[i, j] = new Move(pos, -1);
-                }
-            }
-
-            // 九星
-            int index = 0;
-            for (int i = 3; i <= 15; i += 6)
-            {
-                for (int j = 3; j < 16; j += 6)
-                {
-                    stars[index] = GoPanel[i, j];
-                    ++index;
+                    GoPanel[i, j] = new Move(new Point(i,j),-1);
                 }
             }
 
@@ -127,42 +91,6 @@ namespace SDG {
             return p.x >= 0 && p.x < panelScale && p.y >= 0 && p.y < panelScale;
         }
 
-        // 根据棋盘整型坐标获取棋盘棋子精确坐标
-        public Move GetCoord(Point index)
-        {
-            return GoPanel[index.x, index.y];
-        }
-        // 根据鼠标精确坐标获取棋盘棋子精确坐标
-        public Move GetCoord(Vector2 mousePos)
-        {
-            Point index = Position2Index(mousePos);
-            return GoPanel[index.x, index.y];
-        }
-        // 根据鼠标精确坐标获取棋盘整型坐标
-        public Point Position2Index(Vector2 mousePos)
-        {
-            int x = (int)Mathf.Round(((mousePos.x - borderW) / gap_width));
-            int y = (int)Mathf.Round((mousePos.y - borderH) / gap_height);
-
-            if (x < 0) x = 0;
-            if (x >= panelScale) x = panelScale - 1;
-
-            if (y < 0) y = 0;
-            if (y >= panelScale) y = panelScale - 1;
-
-            return new Point(x, y);
-        }
-
-        // 整形坐标转精确坐标
-        public Vector2 Index2Position(Point index) {
-            if (index.x < 0 || index.x >= panelScale || index.y < 0 || index.y > panelScale) return new Vector2(0,0);
-
-            float x = borderW + index.x * gap_width;
-            float y = borderH + index.y * gap_height;
-
-            return new Vector2(x,y);
-        }
-
         // 获得指定位置的棋子状态
         public int GetPanelPlayer(Point index)
         {
@@ -172,55 +100,6 @@ namespace SDG {
                 return 404;
         }
 
-        // 更新数据给shader
-        public void UpdateShader(ref Material mat)
-        {
-            List<Vector4> moves_black = new List<Vector4>();
-            List<Vector4> moves_white = new List<Vector4>();
-
-            List<float> worms = new List<float>();
-            for (int i = 0; i < Moves.Count; ++i)
-            {
-                if (Moves[i].player == 1)
-                {
-                    moves_black.Add(new Vector4(Moves[i].pos.x, Moves[i].pos.y, 0, 0));
-                }
-                else
-                {
-                    moves_white.Add(new Vector4(Moves[i].pos.x, Moves[i].pos.y, 0, 0));
-                }
-            }
-            if (moves_black.Count > 0)
-            {
-                mat.SetVectorArray("_MovesBlack", moves_black);
-            }
-            if (moves_white.Count > 0)
-            {
-                mat.SetVectorArray("_MovesWhite", moves_white);
-            }
-            mat.SetInt("_lastPlayer", player + 1);
-            mat.SetInt("_StepsBlack", moves_black.Count);
-            mat.SetInt("_StepsWhite", moves_white.Count);
-
-            // 鼠标点击棋子坐标
-            Point curIndex = Position2Index(mousePosition);
-            mat.SetFloat("_mousePosX", GoPanel[curIndex.x, curIndex.y].pos.x);
-            mat.SetFloat("_mousePosY", GoPanel[curIndex.x, curIndex.y].pos.y);
-        }
-
-        // 判断下子操作是否在棋盘区域
-        public bool IsInPanel(Vector2 mousePos)
-        {
-            if (mousePos.x > (borderW - gap_width) && mousePos.x < (1 - borderW + gap_width) && mousePos.y > (borderH - gap_height) && mousePos.y < (1 - borderH + gap_height))
-            {
-                return true;
-            }
-            else
-            {
-                Debug.Log("请在棋盘内下棋！");
-                return false;
-            }
-        }
 #endregion
 
         #region 落子函数
@@ -234,7 +113,7 @@ namespace SDG {
             // 尝试提子
             CheckNoLiberty(index);
             // 落子合法性
-            if (IsOperationAllowed(mousePosition))
+            if (IsOperationAllowed(index))
             {
                 // GNUGo落子确认
                 if (!SetGNUGoMove(index,color)) return false;
@@ -250,13 +129,6 @@ namespace SDG {
                 GoPanel[index.x, index.y].player = curplayer;
                 return false;
             }
-        }
-
-        // 本地当前鼠标位置指定颜色落子
-        public bool SetMove(int color)
-        {
-            Point index = Position2Index(mousePosition);
-            return SetMove(index, color);
         }
 
         // 在gnugo棋盘指定位置落子
@@ -284,10 +156,10 @@ namespace SDG {
 
         #region 游戏算法
         // 判断落子是否合法
-        bool IsOperationAllowed(Vector2 mousePos)
+        bool IsOperationAllowed(Point index)
         {
             // 1. 是否在棋盘内
-            if (!IsInPanel(mousePos)) return false;
+            //if (GoUIManager.Ins.isInPanel(mousePos)) return false;
 
             // 2.位置是否为空
             /*
@@ -300,7 +172,6 @@ namespace SDG {
             */
 
             // 3. 所在棋串是否有气
-            Point index = Position2Index(mousePos);
             if (!IsLibertyEnough(index))
             {
                 Debug.Log("所在棋串无气，请下在别处！");
@@ -353,12 +224,12 @@ namespace SDG {
             LibertyProcess(new Point(start.x + 1, start.y), curplayer, ref liberty);
 
             // 当前棋子进入closed表
-            closedList.Add(Position2Index(openList[0].pos));
+            closedList.Add(openList[0].pos);
             openList.RemoveAt(0);
 
             if (openList.Count != 0)
             {
-                return liberty + GetLiberty(Position2Index(openList[0].pos));
+                return liberty + GetLiberty(openList[0].pos);
             }
             else
             {
@@ -427,11 +298,12 @@ namespace SDG {
                     Debug.Log("断气棋子点" + i + ":(" + closedList[i].x + ", " + closedList[i].y + ")");
                     for (int j = 0; j < Moves.Count; ++j)
                     {
-                        Point index = Position2Index(Moves[j].pos);
+                        Point index = Moves[j].pos;
                         if (closedList[i].x == index.x && closedList[i].y == index.y)
                         {
                             // 从已下棋子中移除
                             Moves.RemoveAt(j);
+                            GoUIManager.Ins.deleteMove(index);
                             // 恢复棋盘棋子状态为无子
                             GoPanel[index.x, index.y].player = -1;
                             break;
