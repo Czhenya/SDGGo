@@ -11,8 +11,8 @@ using SDG;
 
     private void Start()
     {
-        user = new User();
-        roomId = 0;
-        isRoomOwner = false;
+        user = new User();   // 实例化用户信息
+        roomId = 0;          // 房间号
+        isRoomOwner = false; // 默认不是房主
     }
 }

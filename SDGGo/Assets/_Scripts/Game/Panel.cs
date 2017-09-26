@@ -46,6 +46,7 @@ public class Panel : Singleton<Panel>
             if (game.SetMove(oppenPos, game.player))
             {
                 // UI move
+                GoUIManager.Ins.setMove(oppenPos, game.player);
                 game.PlayerChange();
             }
         }
@@ -168,16 +169,16 @@ public class Panel : Singleton<Panel>
     
     void OnlineInit()
     {
-        // 房主先手
+        // 房主后手
         if (CurrentPlayer.Ins.isRoomOwner)
         {
-            game.Players[0] = new Player(CurrentPlayer.Ins.name, 1); // 房主执黑
-            localPlayer = 1;
+            game.Players[0] = new Player(CurrentPlayer.Ins.name, 0); // 房主执黑
+            localPlayer = 0;
         }
         else
         {
-            game.Players[1] = new Player(CurrentPlayer.Ins.name,0);  // 客人执白
-            localPlayer = 0;
+            game.Players[1] = new Player(CurrentPlayer.Ins.name,1);  // 客人执白
+            localPlayer = 1;
         }
         roomidLabel.text = "房间号：" + CurrentPlayer.Ins.roomId.ToString();
 
@@ -186,7 +187,11 @@ public class Panel : Singleton<Panel>
         {
             lock (oppenPos)
             {
-                oppenPos = new Point(0,0);
+                Dictionary<string, int> dic = JsonConvert.DeserializeObject<Dictionary<string, int>>(data.ToString());
+                Debug.Log("RetOperatePiece:"+data);
+                int x = dic["x"];
+                int y = dic["y"];
+                oppenPos = new Point(x,y);
                 isOppenMoved = true;
             }
         });

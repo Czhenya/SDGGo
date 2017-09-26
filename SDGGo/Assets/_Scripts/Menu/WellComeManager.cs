@@ -67,12 +67,16 @@ public class WellComeManager : MonoBehaviour
     {
         // 主线程更新UI
         switch (curStat) {
-            case 0: Tip("");break;
+            case 0: Tip(SocketIO.Ins.tiptext);break;
             case 1: Tip("登录成功！");LoginSuccess(); break;
             case 2: Tip("登录失败！"); break;
             case 3: Tip("注册成功！"); break;
             case 4: Tip("注册失败！"); break;
-            default:Tip(""); break;
+            default:Tip(SocketIO.Ins.tiptext); break;
+        }
+
+        if (Input.GetMouseButtonDown(1)) {
+            SceneManager.LoadScene("Menu");
         }
     }
 
@@ -92,9 +96,7 @@ public class WellComeManager : MonoBehaviour
     ///  登录
     /// </summary>
     public void Login()
-    {
-        //SceneManager.LoadScene("Menu");
-        
+    {        
         SocketIO.Ins.OpenSocket();
         string uname = username.text;
         string upwd = password.text;
@@ -109,15 +111,13 @@ public class WellComeManager : MonoBehaviour
         else {
             Tip("网络尚未连接，请稍后再试！");
         }
-        
     }
 
     /// <summary>
     /// 注册
     /// </summary>
     public void SignUp() {
-        SceneManager.LoadScene("Menu");
-        /*
+        
         SocketIO.Ins.OpenSocket();
         string uname = username.text;
         string upwd = password.text;
@@ -130,7 +130,6 @@ public class WellComeManager : MonoBehaviour
         else
         {
             Tip("网络尚未连接，请稍后再试！");
-        } 
-        */
+        }
     }
 }

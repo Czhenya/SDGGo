@@ -50,6 +50,13 @@ namespace SDG
         public string password;
         public string userid;
         public string token;
+
+        public User() {
+            username = "默认用户名";
+            password = "123";
+            userid = "-1000";
+            token = "farhgt7w4t4t4y";
+        }
     }
 
     // 房间信息

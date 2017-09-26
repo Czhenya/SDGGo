@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using Quobject.SocketIoClientDotNet.Client;
 using Newtonsoft.Json;
+using UnityEngine.UI;
 using SDG;
 
 public class SocketIO : Singleton<SocketIO> {
 
-    string serverURL = "http://10.246.60.27:8000";
+    string serverURL = "http://10.246.60.27:8888";
 
     public Socket sdgSocket;
     public static bool isConnected = false;
+    public string tiptext="";
 
 	// Use this for initialization
 	void Start () {
@@ -22,18 +24,24 @@ public class SocketIO : Singleton<SocketIO> {
         CloseSocket();
     }
 
+    void TIP(string txt) {
+        lock (tiptext)
+        {
+            tiptext = txt;
+        }
+    }
 
     #region 对外接口
     // 初始化并开始socket监听
     public void OpenSocket()
     {
-        Debug.Log("trying to connect socket server...");
+        TIP("trying to connect socket server...");
         if (sdgSocket == null)
         {
             sdgSocket = IO.Socket(serverURL);
 
-            sdgSocket.On(Socket.EVENT_CONNECT, () => {
-                Debug.Log("socket connected!");
+            sdgSocket.On("connect", () => {
+                TIP("socket connected!");
                 isConnected = true;
             });
         }
@@ -52,21 +60,23 @@ public class SocketIO : Singleton<SocketIO> {
     }
     // 登录
     public void Login(ParamBase param) {
+        OpenSocket();
         string paramstr = JsonConvert.SerializeObject(param);
         
         if (sdgSocket != null) {
-            Debug.Log("登录请求参数：" + paramstr);
+            TIP("登录请求参数：" + paramstr);
             sdgSocket.Emit("ReqSignIn",paramstr);
         }
     }
 
     public void Signup(ParamBase param)
     {
+        OpenSocket();
         string paramstr = JsonConvert.SerializeObject(param);
         
         if (sdgSocket != null)
         {
-            Debug.Log("注册请求参数：" + paramstr);
+            TIP("注册请求参数：" + paramstr);
             sdgSocket.Emit("ReqSignUp", paramstr);
         }
     }

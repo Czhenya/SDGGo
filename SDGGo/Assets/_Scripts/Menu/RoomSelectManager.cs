@@ -8,7 +8,6 @@ using SDG;
 
 public class RoomSelectManager : Singleton<RoomSelectManager> {
 
-    public GameObject RoomPrefab = null;
     public Button[] roomButtons = null;
 
     List<RoomInfo> roomList = new List<RoomInfo>();   // 房间列表容器
@@ -17,12 +16,8 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
     int roomid = -1;                                  // 进入房间号
     object locker = new object();
 
-	// Use this for initialization
 	void Start () {
-        // 请求房间列表
-        //roomList.Add(new RoomInfo(111,"user1"));
-        //roomList.Add(new RoomInfo(222, "user2"));
-
+        // 请求参数
         param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
         param.token = CurrentPlayer.Ins.user.token;
 
@@ -36,6 +31,7 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
                 {
                     object objroomlist = dic["roomList"];
                     List<RoomInfo> roomObjs = JsonConvert.DeserializeObject<List<RoomInfo>>(objroomlist.ToString());
+                    roomList.Clear();
                     roomList.AddRange(roomObjs);
                     request = true;
                 }
@@ -57,12 +53,26 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
             }
         });
 
+        // 监听进入房间
+        SocketIO.Ins.sdgSocket.On("RetJoinRoom", (data)=> {
+            Debug.Log("成功进入房间！");
+            lock (locker) {
+                Dictionary<string, object> dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(data.ToString());
+                string code = dic["code"].ToString();
+                if (code == "0")
+                {
+                    roomid = int.Parse(dic["roomid"].ToString());
+                    CurrentPlayer.Ins.roomId = roomid;
+                    CurrentPlayer.Ins.isRoomOwner = false;
+                }
+            }
+        });
+
         // 请求房间列表
         GetRoomList();
         
     }
 	
-	// Update is called once per frame
 	void Update () {
         if (Input.GetMouseButtonDown(1)) {
             SceneManager.LoadScene("Menu");
@@ -110,8 +120,12 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
     // 选择进入房间
     public void EnterRoom(int index) {
         RoomInfo info = roomList[index];
-        roomid = info.roomid;
-        EnterRoom();
+        ParamRoom param_room = new ParamRoom();
+        param_room.userid = param.userid;
+        param_room.token = param.token;
+        param_room.roomid = info.roomid;
+        string paramstr = JsonConvert.SerializeObject(param_room);
+        SocketIO.Ins.sdgSocket.Emit("ReqJoinRoom", paramstr);
     }
     void EnterRoom() {
         Debug.Log("enter room:" + roomid);

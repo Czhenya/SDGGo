@@ -11,6 +11,10 @@ namespace SDG {
         public string token;
     }
 
+    public class ParamRoom:ParamBase {
+        public int roomid;
+    }
+
     public class ParamPlayMove:ParamBase
     {
         public int x;

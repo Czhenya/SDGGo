@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using SDG;
@@ -28,7 +27,7 @@ public class GoUIManager : Singleton<GoUIManager> {
     }
 	
 	void Update () {
-        if (!EventSystem.current.IsPointerOverGameObject()&&Input.GetMouseButtonDown(0)) {
+        if (Input.GetMouseButtonDown(0)) {
             RaycastHit hit;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out hit))
