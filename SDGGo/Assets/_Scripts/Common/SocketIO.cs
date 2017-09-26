@@ -27,6 +27,7 @@ public class SocketIO : Singleton<SocketIO> {
     // 初始化并开始socket监听
     public void OpenSocket()
     {
+        Debug.Log("trying to connect socket server...");
         if (sdgSocket == null)
         {
             sdgSocket = IO.Socket(serverURL);

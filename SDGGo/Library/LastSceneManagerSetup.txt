@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Wellcome.unity
+- path: Assets/GAME_ROOM.unity
   isLoaded: 1
   isActive: 1

@@ -10,6 +10,7 @@ public class GoUIManager : Singleton<GoUIManager> {
 
     public GameObject whiteStone;
     public GameObject blackStone;
+    public GameObject stoneRing;
     public Text coortext;
     // 四个角
     public Transform LTCorner, RTCorner, LBCorner, RBCorner;
@@ -19,6 +20,8 @@ public class GoUIManager : Singleton<GoUIManager> {
     public float panelWidth;           // 棋盘宽度
     float gapWidth;                    // 格子宽度
     GameObject[,] stones = new GameObject[19,19];
+
+    Point preMouseIndex = new Point(-1,-1);
 
     void Start () {
         panelInit();
@@ -33,9 +36,21 @@ public class GoUIManager : Singleton<GoUIManager> {
                 Vector3 hitpos = hit.point;//得到碰撞点的坐标
                 Point mouseIndex = Pos2Index(hitpos);
                 coortext.text = mouseIndex.x + "," + mouseIndex.y;
-                setMove(Pos2PanelPos(hitpos), Panel.Ins.game.player);
-                StartCoroutine(SetGNUMove(mouseIndex));
+                setRing(mouseIndex);
+
+                if (preMouseIndex.x == mouseIndex.x && preMouseIndex.y == mouseIndex.y)
+                {
+                    setMove(Pos2PanelPos(hitpos), Panel.Ins.game.player);
+                    StartCoroutine(SetGNUMove(mouseIndex));
+                }
+                else {
+                    preMouseIndex = mouseIndex;
+                }
             }
+        }
+
+        if (Input.GetMouseButtonDown(1)) {
+            BackHome();
         }
     }
     public void BackHome()
@@ -49,14 +64,8 @@ public class GoUIManager : Singleton<GoUIManager> {
         panelBorder = 0.1f;
         panelWidth = RTCorner.position.x - LTCorner.position.x;
         gapWidth = panelWidth / (panelScale - 1);
-    }
 
-
-    // 是否在棋盘内
-    public bool isInPanel(Vector2 mouseops) {
-       // if (p.x < LTCorner.position.x - panelBorder || p.x > RTCorner.position.x + panelBorder || p.y < RBCorner.position.y - panelBorder || p.y >RTCorner.position.y + panelBorder)
-         //   return false;
-        return true;
+        stoneRing.SetActive(false);
     }
 
     // 整型坐标->棋盘精确坐标
@@ -87,7 +96,9 @@ public class GoUIManager : Singleton<GoUIManager> {
 
     IEnumerator SetGNUMove(Point index) {
         yield return new WaitForSeconds(0.1f);
-        Panel.Ins.SelectMove(index);
+        if (!Panel.Ins.SelectMove(index)) {
+            deleteMove(index);
+        }
         yield return 0;
     }
 
@@ -99,9 +110,17 @@ public class GoUIManager : Singleton<GoUIManager> {
         GameObject stoneColor = color == 1 ? blackStone : whiteStone;
         Point index = Pos2Index(mousePos);
         stones[index.x, index.y] = Instantiate(stoneColor, stonePos, stoneColor.transform.rotation);
+        setRing(stonePos);
     }
-
     public void deleteMove(Point index) {
         stones[index.x, index.y].SetActive(false);
+    }
+
+    public void setRing(Point index) {
+        setRing(Index2PanelPos(index));
+    }
+    public void setRing(Vector3 pos) {
+        stoneRing.transform.position = pos;
+        stoneRing.SetActive(true);
     }
 }

@@ -93,8 +93,8 @@ public class WellComeManager : MonoBehaviour
     /// </summary>
     public void Login()
     {
-        SceneManager.LoadScene("Menu");
-        /*
+        //SceneManager.LoadScene("Menu");
+        
         SocketIO.Ins.OpenSocket();
         string uname = username.text;
         string upwd = password.text;
@@ -109,13 +109,15 @@ public class WellComeManager : MonoBehaviour
         else {
             Tip("网络尚未连接，请稍后再试！");
         }
-        */
+        
     }
 
     /// <summary>
     /// 注册
     /// </summary>
     public void SignUp() {
+        SceneManager.LoadScene("Menu");
+        /*
         SocketIO.Ins.OpenSocket();
         string uname = username.text;
         string upwd = password.text;
@@ -129,5 +131,6 @@ public class WellComeManager : MonoBehaviour
         {
             Tip("网络尚未连接，请稍后再试！");
         } 
+        */
     }
 }

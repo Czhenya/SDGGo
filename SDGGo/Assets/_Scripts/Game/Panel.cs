@@ -56,60 +56,58 @@ public class Panel : Singleton<Panel>
         // timer.UpdateTimer();
     }
 
-    void OnDestroy()
-    {
-        // 注销计时事件
-        //timer.tickEvent -= OnTimeEnd;
-        //timer.tickSeceondEvent -= OnSecond;
-    }
-
     #endregion
 
     #region 对外接口函数
 
     // 落子操作
     // 人人对战
-    public void SetMove_H_H(Point index)
+    bool SetMove_H_H(Point index)
     {
         if (game.SetMove(index, game.player))
         {
             game.PlayerChange();
+            return true;
+        }
+        else {
+            return false;
         }
     }
     // 人机对战
-    void SetMove_H_C(Point index)
+    bool SetMove_H_C(Point index)
     {
         int huamnplayer = 1;
         if (game.player == huamnplayer && game.SetMove(index, huamnplayer))
         {
             game.PlayerChange();
+            StartCoroutine(GNUComputerMove());
+            return true;
         }
         else
         {
-            GoUIManager.Ins.deleteMove(index);
-            return;
+            return false;
         }
-
-        StartCoroutine(GNUComputerMove());
     }
     // 在线对战
-    void SetMove_Online(Point index)
+    bool SetMove_Online(Point index)
     {
         if (game.player == localPlayer)
         {
             if (game.SetMove(index, game.player))
             {
                 game.PlayerChange();
+                // 通知服务器
+                ParamPlayMove param = new ParamPlayMove();
+                param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
+                param.token = CurrentPlayer.Ins.user.token;
+                param.x = index.x;
+                param.y = index.y;
+                string paramstr = JsonConvert.SerializeObject(param);
+                SocketIO.Ins.sdgSocket.Emit("ReqOperatePiece", paramstr);
+                return true;
             }
-            // 通知服务器
-            ParamPlayMove param = new ParamPlayMove();
-            param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
-            param.token = CurrentPlayer.Ins.user.token;
-            param.x = index.x;
-            param.y = index.y;
-            string paramstr = JsonConvert.SerializeObject(param);
-            SocketIO.Ins.sdgSocket.Emit("ReqOperatePiece", paramstr);
         }
+        return false;
     }
     // 计算机落子
     IEnumerator GNUComputerMove()
@@ -122,26 +120,30 @@ public class Panel : Singleton<Panel>
             GoUIManager.Ins.setMove(genm, computerplayer);
             game.PlayerChange();
         }
+        else {
+            Debug.Log("GNUGo AI 下棋失败！");
+        }
         yield return 0;
     }
 
     // 选子操作
-    public void SelectMove(Point mouseIndex)
+    public bool SelectMove(Point mouseIndex)
     {
         // 非游戏状态
-        if (game.gameState != 1) return;
+        if (game.gameState != 1) return false;
+        bool success = false;
 
         // 鼠标坐标转换到0-1空间
         switch (game.gameType)
         {
             case 0:
-                SetMove_H_H(mouseIndex);
+                success = SetMove_H_H(mouseIndex);
                 break;
             case 1:
-                SetMove_H_C(mouseIndex);
+                success = SetMove_H_C(mouseIndex);
                 break;
             case 2:
-                SetMove_Online(mouseIndex);
+                success = SetMove_Online(mouseIndex);
                 break;
             default:
                 break;
@@ -157,6 +159,7 @@ public class Panel : Singleton<Panel>
             float bscore = -wscore;
             ScoreLabel.text = "黑棋领先" + bscore + "点！";
         }
+        return success;
     }
     #endregion
 
