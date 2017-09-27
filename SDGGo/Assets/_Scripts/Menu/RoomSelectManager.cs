@@ -76,10 +76,6 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
     }
 	
 	void Update () {
-        if (Input.GetMouseButtonDown(1)) {
-            SceneManager.LoadScene("Menu");
-        }
-
         // 显示房间列表
         if (request) {
             request = false;
@@ -132,5 +128,10 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
     void EnterRoom() {
         Debug.Log("enter room:" + CurrentPlayer.Ins.roomId);
         SceneManager.LoadScene("GAME_ROOM");
+    }
+
+    // 返回主菜单
+    public void BackHome() {
+        SceneManager.LoadScene("Menu");
     }
 }

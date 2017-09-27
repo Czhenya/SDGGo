@@ -15,7 +15,6 @@ public class WellComeManager : MonoBehaviour
     int curStat = 0;   // 0: 无操作 1：登录成功 2：登录失败 3： 注册成功 4：注册失败
     static object locker = new object();
 
-    // Use this for initialization
     void Start()
     {
         // 监听登录响应
@@ -62,32 +61,20 @@ public class WellComeManager : MonoBehaviour
         });
     }
 
-    // Update is called once per frame
     void Update()
     {
         // 主线程更新UI
         switch (curStat) {
             case 0: Tip(SocketIO.Ins.tiptext);break;
-            case 1: Tip("登录成功！");LoginSuccess(); break;
+            case 1: Tip("登录成功！"); SceneManager.LoadScene("Menu"); break;
             case 2: Tip("登录失败！"); break;
             case 3: Tip("注册成功！"); break;
             case 4: Tip("注册失败！"); break;
             default:Tip(SocketIO.Ins.tiptext); break;
         }
-
-        if (Input.GetMouseButtonDown(1)) {
-            SceneManager.LoadScene("Menu");
-        }
     }
 
-    void LoginSuccess() {
-        SceneManager.LoadScene("Menu");
-    }
-
-    /// <summary>
-    /// 提示
-    /// </summary>
-    /// <param name=""></param>
+    // 提示
     void Tip(string msg) {
         tip.text = msg;
     }
@@ -104,13 +91,8 @@ public class WellComeManager : MonoBehaviour
         CurrentPlayer.Ins.user.password = upwd;
         ParamBase param = new ParamBase();
         param.name = uname;
-        if (SocketIO.isConnected)
-        {
-            SocketIO.Ins.Login(param);
-        }
-        else {
-            Tip("网络尚未连接，请稍后再试！");
-        }
+        string paramstr = JsonConvert.SerializeObject(param);
+        SocketIO.Ins.sdgSocket.Emit("ReqSignIn", paramstr);
     }
 
     /// <summary>
@@ -123,13 +105,7 @@ public class WellComeManager : MonoBehaviour
         string upwd = password.text;
         ParamBase param = new ParamBase();
         param.name = uname;
-        if (SocketIO.isConnected)
-        {
-            SocketIO.Ins.Signup(param);
-        }
-        else
-        {
-            Tip("网络尚未连接，请稍后再试！");
-        }
+        string paramstr = JsonConvert.SerializeObject(param);
+        SocketIO.Ins.sdgSocket.Emit("ReqSignUp", paramstr);
     }
 }

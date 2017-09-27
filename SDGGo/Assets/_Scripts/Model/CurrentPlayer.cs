@@ -12,9 +12,9 @@ using SDG;
 
     private void Start()
     {
-        user = new User();      // 实例化用户信息
+        user = new User();
         opponent = new User();
-        roomId = "";             // 房间号
-        isRoomOwner = false;    // 默认不是房主
+        roomId = "";
+        isRoomOwner = false;         // 默认不是房主
     }
 }

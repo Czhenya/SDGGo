@@ -8,16 +8,16 @@ using SDG;
 
 public class SocketIO : Singleton<SocketIO> {
 
-    string serverURL = "http://10.246.60.27:8000";
+    string serverURL = "http://10.246.60.27:8888";
 
     public Socket sdgSocket;
-    public static bool isConnected = false;
+    public static bool isConnected = false; // 连接状态
     public string tiptext="";
+    object locker = new object();
 
-	// Use this for initialization
 	void Start () {
         OpenSocket();
-	}
+    }
 
     void OnDestroy()
     {
@@ -57,50 +57,6 @@ public class SocketIO : Singleton<SocketIO> {
             isConnected = false;
         }
         Debug.Log("socket closed!");
-    }
-    // 登录
-    public void Login(ParamBase param) {
-        OpenSocket();
-        string paramstr = JsonConvert.SerializeObject(param);
-        
-        if (sdgSocket != null) {
-            TIP("登录请求参数：" + paramstr);
-            sdgSocket.Emit("ReqSignIn",paramstr);
-        }
-    }
-
-    public void Signup(ParamBase param)
-    {
-        OpenSocket();
-        string paramstr = JsonConvert.SerializeObject(param);
-        
-        if (sdgSocket != null)
-        {
-            TIP("注册请求参数：" + paramstr);
-            sdgSocket.Emit("ReqSignUp", paramstr);
-        }
-    }
-
-    public void GetRoomList() {
-    }
-
-    public void CreateRoom() {
-    }
-
-    public void JoinRoom() {
-    }
-
-    public void PlayMove(ParamPlayMove param) {
-        string paramstr = JsonConvert.SerializeObject(param);
-        if (sdgSocket != null) {
-            sdgSocket.Emit("",paramstr);
-        }
-    }
-
-    public void GameStart() {
-    }
-
-    public void GameOver() {
     }
 
 #endregion

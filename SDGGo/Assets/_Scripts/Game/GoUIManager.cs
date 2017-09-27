@@ -7,20 +7,21 @@ using SDG;
 
 public class GoUIManager : Singleton<GoUIManager> {
 
-    public GameObject whiteStone;
-    public GameObject blackStone;
-    public GameObject stoneRing;
+    public GameObject whiteStone; // 白子
+    public GameObject blackStone; // 黑子
+    public GameObject stoneRing;  // 指示环
     public Text coortext;
     // 四个角
     public Transform LTCorner, RTCorner, LBCorner, RBCorner;
-
     public int panelScale = 19;
     public float panelBorder = 0.1f;   // 棋盘边界
     public float panelWidth;           // 棋盘宽度
     float gapWidth;                    // 格子宽度
+    // 棋子容器
     GameObject[,] stones = new GameObject[19,19];
-
+    // 鼠标点击坐标记忆
     Point preMouseIndex = new Point(-1,-1);
+
 
     void Start () {
         panelInit();
@@ -47,10 +48,6 @@ public class GoUIManager : Singleton<GoUIManager> {
                 }
             }
         }
-
-        if (Input.GetMouseButtonDown(1)) {
-            BackHome();
-        }
     }
 
     // 返回主菜单
@@ -59,6 +56,7 @@ public class GoUIManager : Singleton<GoUIManager> {
         SceneManager.LoadScene("Menu");
     }
 
+    // 棋盘初始化
     void panelInit()
     {
         panelScale = 19;
@@ -95,6 +93,7 @@ public class GoUIManager : Singleton<GoUIManager> {
         return Index2PanelPos(Pos2Index(pos));
     }
 
+    // GNUGo后台落子
     IEnumerator SetGNUMove(Point index) {
         yield return new WaitForSeconds(0.1f);
         if (!Panel.Ins.SelectMove(index)) {
@@ -103,6 +102,7 @@ public class GoUIManager : Singleton<GoUIManager> {
         yield return 0;
     }
 
+    // 界面落子
     public void setMove(Point index, int color) {
         setMove(Index2PanelPos(index),color);
     }
@@ -113,10 +113,13 @@ public class GoUIManager : Singleton<GoUIManager> {
         stones[index.x, index.y] = Instantiate(stoneColor, stonePos, stoneColor.transform.rotation);
         setRing(stonePos);
     }
+
+    // 移除棋子
     public void deleteMove(Point index) {
         stones[index.x, index.y].SetActive(false);
     }
 
+    // 设置指示环
     public void setRing(Point index) {
         setRing(Index2PanelPos(index));
     }
