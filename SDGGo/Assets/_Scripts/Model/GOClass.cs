@@ -31,25 +31,13 @@ namespace SDG
         }
     }
 
-    // 玩家对象数据结构
-    public class Player 
-    {
-        public string name;    // 姓名
-        public int player;     // 玩家棋子，1为黑子，0为白子
-        public int eatStones;  // 提子数
-
-        public Player(string _name, int _player) {
-            name = _name;
-            player = _player;
-        }
-    }
-
     // 用户
     public class User {
         public string username;
         public string password;
         public string userid;
         public string token;
+        public int color;       // 棋子颜色
 
         public User() {
             username = "默认用户名";

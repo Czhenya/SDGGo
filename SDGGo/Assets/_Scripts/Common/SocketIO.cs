@@ -8,7 +8,7 @@ using SDG;
 
 public class SocketIO : Singleton<SocketIO> {
 
-    string serverURL = "http://10.246.60.27:8888";
+    string serverURL = "http://10.246.60.27:8000";
 
     public Socket sdgSocket;
     public static bool isConnected = false;

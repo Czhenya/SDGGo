@@ -42,7 +42,7 @@ namespace SDG {
         public int moveTime;          // 落子时间
         public int timeUsed;          // 游戏已用时间
 
-        public Player[] Players = new Player[2];       // 两个玩家
+        //public Player[] Players = new Player[2];       // 两个玩家
         public List<Move> Moves = new List<Move>();    // 已下棋子(按照落子顺序)
         public Move[,] GoPanel = new Move[19, 19];     // 整个棋盘棋子二维数组
 

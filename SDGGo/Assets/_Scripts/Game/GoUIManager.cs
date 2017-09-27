@@ -52,6 +52,8 @@ public class GoUIManager : Singleton<GoUIManager> {
             BackHome();
         }
     }
+
+    // 返回主菜单
     public void BackHome()
     {
         SceneManager.LoadScene("Menu");

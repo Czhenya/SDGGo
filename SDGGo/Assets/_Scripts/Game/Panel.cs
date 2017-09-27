@@ -11,17 +11,17 @@ public class Panel : Singleton<Panel>
     public int GameType;               // 游戏类型：0-人人；1-人机；2-在线对战
     public Image stone;                // 棋子指示
     public Text timerLabel;            // 计时标签
-    public Text ScoreLabel;            // 打分标签
+    public Text GameState;             // 游戏状态
+    public Text GameStart;
     public Text roomidLabel;           // 房间号标签
-    public Text[] playerText;          // 玩家信息
+    public Text opponentinfo;          // 对手玩家信息
     public Text localplayerinfo;       // 本地玩家信息
 
-    public Game game;                 // 游戏实例
+    public Game game;                  // 游戏实例
     private Timer timer;               // 计时器对象
 
     // 在线对战:
-    int localPlayer = 1;               // 本地棋手颜色
-    Point oppenPos = new Point(0, 0);   // 服务器传来的对手落子位置
+    Point oppenPos = new Point(0, 0);  // 服务器传来的对手落子位置
     bool isOppenMoved = false;         // 对手是否已落子
 
     #region 脚本生命周期
@@ -29,15 +29,62 @@ public class Panel : Singleton<Panel>
     void Start()
     {
         InitialData();
-        StartGame();
+        if (GameType != 2) StartGame();
+
+        // 监听游戏开始
+        SocketIO.Ins.sdgSocket.On("RetGameStart",(data)=> {
+            Dictionary<string, int> dic = JsonConvert.DeserializeObject<Dictionary<string, int>>(data.ToString());
+            int room = dic["roomid"];
+            Debug.Log("游戏开始！房间号："+room);
+            lock (game) {
+                game.gameState = 1;
+            }
+        });
+
+        // 监听游戏结束
+        SocketIO.Ins.sdgSocket.On("RetGameEnd",(data)=> {
+            Dictionary<string, object> dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(data.ToString());
+            /*
+            "roomid" : 1,
+            "type" : 1,
+            "winnerid" : 1,
+            "winnername" : "zhangsan"
+            0: 正常胜利
+            1: 有人认输
+            2: 有人掉线
+             */
+        });
+
+        // 监听进入房间
+        SocketIO.Ins.sdgSocket.On("RetJoinRoom",(data)=> {
+            Dictionary<string, object> dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(data.ToString());
+            string code = dic["code"].ToString();
+            if (code == "0") {
+                lock (CurrentPlayer.Ins.opponent) {
+                    CurrentPlayer.Ins.opponent.userid = dic["userid"].ToString();
+                    CurrentPlayer.Ins.opponent.username = dic["name"].ToString();
+                }
+            }
+        });
     }
 
     // 帧回调
     void Update()
     {
         stone.color = game.player == 1 ? Color.black : Color.white;
-        string localcolor = localPlayer == 1 ? "执黑" : "执白";
-        localplayerinfo.text = "本地玩家信息：\n" + CurrentPlayer.Ins.user.username + "\n" + localcolor;
+        
+        if (CurrentPlayer.Ins) {
+            string localcolor = (CurrentPlayer.Ins.user.color == 1) ? "执黑" : "执白";
+            localplayerinfo.text = "本地玩家信息：\n" + CurrentPlayer.Ins.user.username + "\n" + localcolor;
+
+            string oppocolor = (CurrentPlayer.Ins.opponent.color == 1) ? "执黑" : "执白";
+            opponentinfo.text = "对手玩家信息：\n" + CurrentPlayer.Ins.opponent.username + "\n" + oppocolor;
+        }
+
+        // 游戏开始
+        if (game.gameState == 1) {
+            StartGame();
+        }
 
         // 对手落子
         if (isOppenMoved)
@@ -54,14 +101,23 @@ public class Panel : Singleton<Panel>
     // 固定时间间隔回调
     void FixedUpdate()
     {
-        // timer.UpdateTimer();
+         timer.UpdateTimer();
     }
 
     #endregion
 
     #region 对外接口函数
 
-    // 落子操作
+    // 认输
+    public void GiveUpGame()
+    {
+        ParamGameEnd param = new ParamGameEnd();
+        //param.userid = CurrentPlayer
+        SocketIO.Ins.sdgSocket.Emit("ReqGameEnd", "");
+    }
+    #endregion
+
+    #region 落子操作
     // 人人对战
     bool SetMove_H_H(Point index)
     {
@@ -92,7 +148,7 @@ public class Panel : Singleton<Panel>
     // 在线对战
     bool SetMove_Online(Point index)
     {
-        if (game.player == localPlayer)
+        if (game.player == CurrentPlayer.Ins.user.color)
         {
             if (game.SetMove(index, game.player))
             {
@@ -153,12 +209,12 @@ public class Panel : Singleton<Panel>
         float wscore = Game.SDGGetScore();
         if (wscore > 0)
         {
-            ScoreLabel.text = "白棋领先" + wscore + "点！";
+            GameState.text = "白棋领先" + wscore + "点！";
         }
         else
         {
             float bscore = -wscore;
-            ScoreLabel.text = "黑棋领先" + bscore + "点！";
+            GameState.text = "黑棋领先" + bscore + "点！";
         }
         return success;
     }
@@ -169,17 +225,6 @@ public class Panel : Singleton<Panel>
     
     void OnlineInit()
     {
-        // 房主后手
-        if (CurrentPlayer.Ins.isRoomOwner)
-        {
-            game.Players[0] = new Player(CurrentPlayer.Ins.name, 0); // 房主执黑
-            localPlayer = 0;
-        }
-        else
-        {
-            game.Players[1] = new Player(CurrentPlayer.Ins.name,1);  // 客人执白
-            localPlayer = 1;
-        }
         roomidLabel.text = "房间号：" + CurrentPlayer.Ins.roomId.ToString();
 
         // 监听对手落子
@@ -209,12 +254,22 @@ public class Panel : Singleton<Panel>
         // 初始化先手棋子颜色
         game.player = 1;
 
+        // 客人执黑
+        if (CurrentPlayer.Ins.isRoomOwner)
+        {
+            CurrentPlayer.Ins.user.color = 0;
+            CurrentPlayer.Ins.opponent.color = 1;
+        }
+        else {
+            CurrentPlayer.Ins.user.color = 1;
+            CurrentPlayer.Ins.opponent.color = 0;
+        }
+
         // 注册计时事件
-        /* timer = new Timer(game.moveTime);
+         timer = new Timer(game.moveTime);
          timer.tickEvent += OnTimeEnd;
          timer.tickSeceondEvent += OnSecond;
          timerLabel.text = timer._currentTime.ToString();
-         */
     }
     
 
@@ -227,7 +282,8 @@ public class Panel : Singleton<Panel>
     void StartGame()
     {
         game.gameState = 1;
-        // timer.StartTimer();
+        GameStart.text = "游戏开始！";
+        timer.StartTimer();
     }
 
     // 玩家切换
@@ -243,11 +299,10 @@ public class Panel : Singleton<Panel>
         }
         game.PlayerChange();
 
-        /*
+        // 重置计时器
         timer.ResetTimer();
         timer.StartTimer();
         timerLabel.text = timer._currentTime.ToString();
-        */
     }
     
     #endregion
@@ -265,5 +320,6 @@ public class Panel : Singleton<Panel>
         game.timeUsed++;
         timerLabel.text = timer._currentTime.ToString();
     }
-#endregion
+    #endregion
+
 }

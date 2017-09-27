@@ -21,6 +21,11 @@ namespace SDG {
         public int y;
     }
 
+    public class ParamGameEnd : ParamBase {
+        public int type;
+        public int winnerid;
+    }
+
     public class Params
     {
     }
