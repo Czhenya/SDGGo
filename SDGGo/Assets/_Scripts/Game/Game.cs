@@ -80,7 +80,7 @@ namespace SDG {
             return (player + 1) % 2;
         }
         // 切换当前玩家
-        public void PlayerChange()
+        public void ChangePlayer()
         {
             player = (player + 1) % 2;
         }

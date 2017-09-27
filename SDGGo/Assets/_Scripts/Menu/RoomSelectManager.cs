@@ -13,7 +13,7 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
     List<RoomInfo> roomList = new List<RoomInfo>();   // 房间列表容器
     ParamBase param = new ParamBase();                // 参数对象
     bool request = false;                             // 请求房间列表状态
-    int roomid = -1;                                  // 进入房间号
+    bool isEnterRoom=false;                           // 进入房间
     object locker = new object();
 
 	void Start () {
@@ -46,9 +46,9 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
                 string code = dic["code"].ToString();
                 if (code == "0")
                 {
-                    roomid = int.Parse(dic["roomid"].ToString());
-                    CurrentPlayer.Ins.roomId = roomid;
+                    CurrentPlayer.Ins.roomId = dic["roomid"].ToString();
                     CurrentPlayer.Ins.isRoomOwner = true;
+                    isEnterRoom = true;
                 }
             }
         });
@@ -61,9 +61,11 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
                 string code = dic["code"].ToString();
                 if (code == "0")
                 {
-                    roomid = int.Parse(dic["roomid"].ToString());
-                    CurrentPlayer.Ins.roomId = roomid;
+                    CurrentPlayer.Ins.roomId = dic["roomid"].ToString();
                     CurrentPlayer.Ins.isRoomOwner = false;
+                    CurrentPlayer.Ins.opponent.userid = dic["userid"].ToString();
+                    CurrentPlayer.Ins.opponent.username = dic["name"].ToString();
+                    isEnterRoom = true;
                 }
             }
         });
@@ -83,7 +85,7 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
             request = false;
             for (int i = 0; i < roomList.Count; ++i)
             {
-                if (i > 10) break;
+                if (i > 5) break;
 
                 roomButtons[i].gameObject.SetActive(true);
                 roomButtons[i].gameObject.GetComponentInChildren<Text>().text = "room" + roomList[i].roomid;
@@ -91,7 +93,7 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
         }
 
         // 进入房间
-        if (roomid != -1) {
+        if (isEnterRoom) {
             EnterRoom();
         }
 	}
@@ -128,8 +130,7 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
         SocketIO.Ins.sdgSocket.Emit("ReqJoinRoom", paramstr);
     }
     void EnterRoom() {
-        Debug.Log("enter room:" + roomid);
-        CurrentPlayer.Ins.roomId = roomid;
+        Debug.Log("enter room:" + CurrentPlayer.Ins.roomId);
         SceneManager.LoadScene("GAME_ROOM");
     }
 }
