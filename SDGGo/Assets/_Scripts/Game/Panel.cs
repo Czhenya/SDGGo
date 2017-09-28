@@ -17,13 +17,18 @@ public class Panel : Singleton<Panel>
     public Text opponentinfo;            // 对手玩家信息
     public Text localplayerinfo;         // 本地玩家信息
 
+    // 对话框
+    public GameObject Dialog;
+
     public Game game;                    // 游戏实例
     // Timer timer;                      // 计时器对象
     ParamBase param;
 
     // 在线对战:
-    Point oppenPos = new Point(0, 0);  // 服务器传来的对手落子位置
-    bool isOppenMoved = false;         // 对手是否已落子
+    object locker = new object();
+    Point oppenPos = new Point(0, 0);    // 服务器传来的对手落子位置
+    bool isOppenMoved = false;           // 对手是否已落子
+    bool isReqCheckOut = false;          // 请求结算 
 
     #region 脚本生命周期
     // 初始化
@@ -31,9 +36,11 @@ public class Panel : Singleton<Panel>
     {
         // 初始化
         InitialData();
-
         // 在线对战初始化
-        if (GameType == 2) OnlineInit();
+        if (GameType == 2)
+        {
+            OnlineInit();
+        }
     }
 
     // 帧回调
@@ -48,9 +55,17 @@ public class Panel : Singleton<Panel>
             opponentinfo.text = "对手玩家信息：\n" + CurrentPlayer.Ins.opponent.username + "\n" + oppocolor;
         }
 
-        // 监听游戏开始
+        // 监听游戏状态
         if (game.gameState == 1) {
+            // 游戏开始
             StartGame();
+        }
+        else if (game.gameState == 3) {
+            // 游戏结束
+            User winner = (CurrentPlayer.Ins.isWinner) ? CurrentPlayer.Ins.user : CurrentPlayer.Ins.opponent;
+            string winner_color = winner.color == 1 ? "（黑方）" : "（白方）";
+            GameState.text = winner.username + winner_color + "获胜！";
+            CurrentPlayer.Ins.ResetOnlineGame();
         }
 
         // 对手落子
@@ -63,6 +78,12 @@ public class Panel : Singleton<Panel>
                 GoUIManager.Ins.setMove(oppenPos, game.player);
                 PlayerChange();
             }
+        }
+
+        // 请求结算
+        if (isReqCheckOut) {
+            isReqCheckOut = false;
+            Dialog.SetActive(true);
         }
 
     }
@@ -104,24 +125,25 @@ public class Panel : Singleton<Panel>
         SocketIO.Ins.sdgSocket.On("RetGameEnd", (data) => {
             lock (game)
             {
-                game.gameState = 3; // 游戏结束
                 Dictionary<string, object> dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(data.ToString());
                 Debug.Log("游戏结束：" + data);
+                int room_id = int.Parse(dic["roomid"].ToString());
+                int type = int.Parse(dic["type"].ToString()); /* 0: 正常胜利 1: 有人认输 2: 有人掉线 */
+                string winner_id = dic["winnerid"].ToString();
+                string winner_name = dic["winnername"].ToString();
+
+                game.gameState = 3; // 游戏结束
+                CurrentPlayer.Ins.isWinner = (winner_id == CurrentPlayer.Ins.user.userid) ? true : false;
             }
-            /*
-            "roomid" : 1,
-            "type" : 1,
-            "winnerid" : 1,
-            "winnername" : "zhangsan"
-            0: 正常胜利
-            1: 有人认输
-            2: 有人掉线
-             */
         });
 
         // 监听结算
         SocketIO.Ins.sdgSocket.On("RetCheckOut", (data) => {
-            //
+            // 弹出确认结算对话框
+            Debug.Log("确认结算通知！");
+            lock (locker) {
+                isReqCheckOut = true;
+            }
         });
     }
 
@@ -140,14 +162,50 @@ public class Panel : Singleton<Panel>
     public void GiveUpGame()
     {
         ParamGameEnd param = new ParamGameEnd();
-        //param.userid = CurrentPlayer
-        SocketIO.Ins.sdgSocket.Emit("ReqGameEnd", "");
+        param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
+        param.token = CurrentPlayer.Ins.user.token;
+        param.winnerid = int.Parse(CurrentPlayer.Ins.opponent.userid);
+        param.type = 1;// 认输
+        string paramstr = JsonConvert.SerializeObject(param);
+        SocketIO.Ins.sdgSocket.Emit("ReqGameEnd", paramstr);
+
+        // 游戏结束
+        User winner = CurrentPlayer.Ins.opponent;
+        string winner_color = winner.color == 1 ? "（黑方）" : "（白方）";
+        GameState.text = winner.username + winner_color + "获胜！";
+        game.gameState = 3;
     }
 
     // 请求结算
     public void CheckOutGame() {
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqCheckOut", paramstr);
+    }
+
+    // 确认结算
+    public void ConfirmCheckOut() {
+        ParamGameEnd param = new ParamGameEnd();
+        param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
+        param.token = CurrentPlayer.Ins.user.token;
+        // 胜利者
+        float score = Game.SDGGetScore();
+        if (score>0 && (CurrentPlayer.Ins.user.color == 0) || (score<=0 && CurrentPlayer.Ins.user.color == 1)) {
+            
+            param.winnerid = int.Parse(CurrentPlayer.Ins.user.userid);
+        }
+        else {
+            param.winnerid = int.Parse(CurrentPlayer.Ins.opponent.userid);
+        }
+        param.type = 0;// 正常胜利
+        string paramstr = JsonConvert.SerializeObject(param);
+        SocketIO.Ins.sdgSocket.Emit("ReqGameEnd", paramstr);
+
+        CloseDialog();
+    }
+
+    // 关闭对话框
+    public void CloseDialog() {
+        Dialog.SetActive(false);
     }
     #endregion
 
