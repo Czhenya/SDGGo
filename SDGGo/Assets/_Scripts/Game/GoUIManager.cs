@@ -10,7 +10,6 @@ public class GoUIManager : Singleton<GoUIManager> {
     public GameObject whiteStone; // 白子
     public GameObject blackStone; // 黑子
     public GameObject stoneRing;  // 指示环
-    public Text coortext;
     // 四个角
     public Transform LTCorner, RTCorner, LBCorner, RBCorner;
     public int panelScale = 19;
@@ -35,7 +34,6 @@ public class GoUIManager : Singleton<GoUIManager> {
             {
                 Vector3 hitpos = hit.point;//得到碰撞点的坐标
                 Point mouseIndex = Pos2Index(hitpos);
-                coortext.text = mouseIndex.x + "," + mouseIndex.y;
                 setRing(mouseIndex);
 
                 if (preMouseIndex.x == mouseIndex.x && preMouseIndex.y == mouseIndex.y)

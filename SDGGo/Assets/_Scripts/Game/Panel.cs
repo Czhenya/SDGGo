@@ -9,16 +9,15 @@ using SDG;
 public class Panel : Singleton<Panel>
 {
     public int GameType;                 // 游戏类型：0-人人；1-人机；2-在线对战
-    public Image stone;                  // 棋子指示
     //public Text timerLabel;            // 计时标签
     public Text GameResult;              // 当前游戏结算
     public Text GameState;               // 游戏状态
     public Text roomidLabel;             // 房间号标签
-    public Text opponentinfo;            // 对手玩家信息
-    public Text localplayerinfo;         // 本地玩家信息
-
     // 对话框
     public GameObject Dialog;
+    public GameObject[] colorsToMove;
+    public UIPlayer[] players;
+
 
     public Game game;                    // 游戏实例
     // Timer timer;                      // 计时器对象
@@ -47,13 +46,10 @@ public class Panel : Singleton<Panel>
     void Update()
     {       
         // 更新玩家信息
-        if (CurrentPlayer.Ins) {
-            string localcolor = (CurrentPlayer.Ins.user.color == 1) ? "执黑" : "执白";
-            localplayerinfo.text = "本地玩家信息：\n" + CurrentPlayer.Ins.user.username + "\n" + localcolor;
-
-            string oppocolor = (CurrentPlayer.Ins.opponent.color == 1) ? "执黑" : "执白";
-            opponentinfo.text = "对手玩家信息：\n" + CurrentPlayer.Ins.opponent.username + "\n" + oppocolor;
-        }
+        UIPlayer local = players[CurrentPlayer.Ins.user.color];
+        UIPlayer oppoent = players[CurrentPlayer.Ins.opponent.color];
+        local.name.text = CurrentPlayer.Ins.user.username;
+        oppoent.name.text = CurrentPlayer.Ins.opponent.username;
 
         // 监听游戏状态
         if (game.gameState == 1) {
@@ -361,14 +357,9 @@ public class Panel : Singleton<Panel>
     // 玩家切换
     void PlayerChange()
     {
-        if (game.player == 0)
-        {
-            stone.color = Color.black;
-        }
-        else
-        {
-            stone.color = Color.white;
-        }
+        // 下棋指示切换
+        colorsToMove[game.player].SetActive(false);
+        colorsToMove[game.PlayerToogle()].SetActive(true);
 
         // 重置计时器
         //timer.ResetTimer();

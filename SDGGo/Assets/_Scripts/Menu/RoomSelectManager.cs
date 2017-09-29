@@ -8,7 +8,9 @@ using SDG;
 
 public class RoomSelectManager : Singleton<RoomSelectManager> {
 
-    public Button[] roomButtons = null;
+    public GameObject RoomItemPrefab = null;
+    public List<GameObject> roomItems = null;
+    public GameObject RoomContent = null;
 
     List<RoomInfo> roomList = new List<RoomInfo>();   // 房间列表容器
     ParamBase param = new ParamBase();                // 参数对象
@@ -17,6 +19,12 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
     object locker = new object();
 
 	void Start () {
+        RoomInfo room1 = new RoomInfo(111,"x小王");
+        RoomInfo room2 = new RoomInfo(222,"albert");
+        roomList.Add(room1);
+        roomList.Add(room2);
+        request = true;
+
         // 请求参数
         param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
         param.token = CurrentPlayer.Ins.user.token;
@@ -72,20 +80,13 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
 
         // 请求房间列表
         GetRoomList();
-        
     }
 	
 	void Update () {
-        // 显示房间列表
+        // 刷新房间列表
         if (request) {
             request = false;
-            for (int i = 0; i < roomList.Count; ++i)
-            {
-                if (i > 5) break;
-
-                roomButtons[i].gameObject.SetActive(true);
-                roomButtons[i].gameObject.GetComponentInChildren<Text>().text = "room" + roomList[i].roomid;
-            }
+            UpdateRoomList();
         }
 
         // 进入房间
@@ -102,6 +103,33 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
         {
             string paramstr = JsonConvert.SerializeObject(param);
             SocketIO.Ins.sdgSocket.Emit("ReqGetRoomList", paramstr);
+        }
+    }
+
+    // 刷新房间列表
+    void UpdateRoomList() {
+        // 清空
+        for (int i = 0; i < RoomContent.transform.childCount; i++)
+        {
+            Destroy(RoomContent.transform.GetChild(i).gameObject);
+         }
+        // 刷新
+        for (int i = 0; i < roomList.Count; ++i)
+        {
+            // 新房间项坐标
+            float item_margin = UIRoomItem.margin;
+            float item_height = UIRoomItem.height;
+            Vector3 position = new Vector3(0, -(item_margin * (i + 1) + item_height * i));
+            GameObject room_item = Instantiate(RoomItemPrefab);
+            room_item.transform.parent = RoomContent.transform;
+            room_item.transform.localPosition = position;
+            room_item.transform.localScale = new Vector3(1,1,1);
+            roomItems.Add(room_item);
+
+            UIRoomItem uirromitem = roomItems[i].GetComponent<UIRoomItem>();
+            uirromitem.room_index = i;
+            uirromitem.room_name.text = "房间号：" + roomList[i].roomid;
+            uirromitem.room_info.text = "房主：" + roomList[i].owner;
         }
     }
 

@@ -102,6 +102,8 @@
     <Compile Include="Assets\_Scripts\Model\CurrentPlayer.cs" />
     <Compile Include="Assets\_Scripts\Model\GOClass.cs" />
     <Compile Include="Assets\_Scripts\Model\Params.cs" />
+    <Compile Include="Assets\_Scripts\Model\UIClass.cs" />
+    <Compile Include="Assets\_Scripts\Model\UIRoomItem.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\_Resources\Panel.shader" />
