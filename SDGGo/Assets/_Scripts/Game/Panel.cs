@@ -61,7 +61,6 @@ public class Panel : Singleton<Panel>
             User winner = (CurrentPlayer.Ins.isWinner) ? CurrentPlayer.Ins.user : CurrentPlayer.Ins.opponent;
             string winner_color = winner.color == 1 ? "（黑方）" : "（白方）";
             GameState.text = winner.username + winner_color + "获胜！";
-            CurrentPlayer.Ins.ResetOnlineGame();
         }
 
         // 对手落子
@@ -149,6 +148,7 @@ public class Panel : Singleton<Panel>
 
     // 开始游戏
     public void ReqStartGame() {
+        if (GameType != 2) return;
         Debug.Log("请求开始游戏");
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqGameStart",paramstr);
@@ -157,6 +157,16 @@ public class Panel : Singleton<Panel>
     // 认输
     public void GiveUpGame()
     {
+        if (GameType == 0) return;
+
+        // 游戏结束
+        User winner = CurrentPlayer.Ins.opponent;
+        string winner_color = winner.color == 1 ? "（黑方）" : "（白方）";
+        GameState.text = winner.username + winner_color + "获胜！";
+        game.gameState = 3;
+
+        if (GameType == 1) return;
+
         ParamGameEnd param = new ParamGameEnd();
         param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
         param.token = CurrentPlayer.Ins.user.token;
@@ -165,15 +175,12 @@ public class Panel : Singleton<Panel>
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqGameEnd", paramstr);
 
-        // 游戏结束
-        User winner = CurrentPlayer.Ins.opponent;
-        string winner_color = winner.color == 1 ? "（黑方）" : "（白方）";
-        GameState.text = winner.username + winner_color + "获胜！";
-        game.gameState = 3;
+        
     }
 
     // 请求结算
     public void CheckOutGame() {
+        if (GameType != 2) return;
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqCheckOut", paramstr);
     }
@@ -319,6 +326,13 @@ public class Panel : Singleton<Panel>
         game.player = 1;
         // 离线游戏直接开始
         if (GameType != 2) StartGame();
+
+        if (GameType == 0) {
+            CurrentPlayer.Ins.opponent.username = "友情对手";
+        }
+        if (GameType == 1) {
+            CurrentPlayer.Ins.opponent.username = "GNUGo AI";
+        }
 
         // 客人执黑
         if (CurrentPlayer.Ins.isRoomOwner)

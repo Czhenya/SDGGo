@@ -15,11 +15,6 @@ using SDG;
 
     void Start()
     {
-        ResetOnlineGame();
-    }
-
-    // 在线游戏结束重置游戏数据
-    public void ResetOnlineGame() {
         user = new User();
         opponent = new User();
         roomId = "";

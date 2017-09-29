@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using Quobject.SocketIoClientDotNet.Client;
 using Newtonsoft.Json;
-using UnityEngine.UI;
 using SDG;
 
 public class SocketIO : Singleton<SocketIO> {
