@@ -9,7 +9,7 @@ using SDG;
 public class RoomSelectManager : Singleton<RoomSelectManager> {
 
     public GameObject RoomItemPrefab = null;
-    public List<GameObject> roomItems = null;
+    //public List<GameObject> roomItems = null;
     public GameObject RoomContent = null;
 
     List<RoomInfo> roomList = new List<RoomInfo>();   // 房间列表容器
@@ -19,11 +19,6 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
     object locker = new object();
 
 	void Start () {
-        RoomInfo room1 = new RoomInfo(111,"x小王");
-        RoomInfo room2 = new RoomInfo(222,"albert");
-        roomList.Add(room1);
-        roomList.Add(room2);
-        request = true;
 
         // 请求参数
         param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
@@ -113,6 +108,7 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
         {
             Destroy(RoomContent.transform.GetChild(i).gameObject);
          }
+        //roomItems.Clear();
         // 刷新
         for (int i = 0; i < roomList.Count; ++i)
         {
@@ -124,9 +120,8 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
             room_item.transform.parent = RoomContent.transform;
             room_item.transform.localPosition = position;
             room_item.transform.localScale = new Vector3(1,1,1);
-            roomItems.Add(room_item);
 
-            UIRoomItem uirromitem = roomItems[i].GetComponent<UIRoomItem>();
+            UIRoomItem uirromitem = room_item.GetComponent<UIRoomItem>();
             uirromitem.room_index = i;
             uirromitem.room_name.text = "房间号：" + roomList[i].roomid;
             uirromitem.room_info.text = "房主：" + roomList[i].owner;

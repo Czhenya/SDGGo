@@ -10,6 +10,8 @@ public class GoUIManager : Singleton<GoUIManager> {
     public GameObject whiteStone; // 白子
     public GameObject blackStone; // 黑子
     public GameObject stoneRing;  // 指示环
+    public LineRenderer line_vertical;
+    public LineRenderer line_horizontal;
     // 四个角
     public Transform LTCorner, RTCorner, LBCorner, RBCorner;
     public int panelScale = 19;
@@ -123,6 +125,23 @@ public class GoUIManager : Singleton<GoUIManager> {
     }
     public void setRing(Vector3 pos) {
         stoneRing.transform.position = pos;
-        stoneRing.SetActive(true);
+        stoneRing.SetActive(false); // 隐藏环不再使用
+
+        float line_ver_x = pos.x;
+        float line_hor_y = pos.y;
+
+        float line_ver_y_start = LBCorner.position.y;
+        float line_ver_y_end = LTCorner.position.y;
+
+        float line_hor_x_start = LTCorner.position.x;
+        float line_hor_x_end = RTCorner.position.x;
+
+        float line_z = -0.1f;
+
+        line_horizontal.SetPosition(0, new Vector3(line_hor_x_start, line_hor_y, line_z));
+        line_horizontal.SetPosition(1, new Vector3(line_hor_x_end, line_hor_y, line_z));
+
+        line_vertical.SetPosition(0, new Vector3(line_ver_x, line_ver_y_start, line_z));
+        line_vertical.SetPosition(1, new Vector3(line_ver_x, line_ver_y_end, line_z));
     }
 }
