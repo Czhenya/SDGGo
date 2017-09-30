@@ -9,7 +9,7 @@ using SDG;
 public class Panel : Singleton<Panel>
 {
     public int GameType;                 // 游戏类型：0-人人；1-人机；2-在线对战
-    //public Text timerLabel;            // 计时标签
+    public Text timerLabel;              // 计时标签
     public Text GameResult;              // 当前游戏结算
     public Text GameState;               // 游戏状态
     public Text roomidLabel;             // 房间号标签
@@ -20,7 +20,7 @@ public class Panel : Singleton<Panel>
 
 
     public Game game;                    // 游戏实例
-    // Timer timer;                      // 计时器对象
+    Timer timer;                         // 计时器对象
     ParamBase param;
 
     // 在线对战:
@@ -61,6 +61,8 @@ public class Panel : Singleton<Panel>
             User winner = (CurrentPlayer.Ins.isWinner) ? CurrentPlayer.Ins.user : CurrentPlayer.Ins.opponent;
             string winner_color = winner.color == 1 ? "（黑方）" : "（白方）";
             GameState.text = winner.username + winner_color + "获胜！";
+            CurrentPlayer.Ins.Reset();
+            game.gameState = 0;
         }
 
         // 对手落子
@@ -83,10 +85,10 @@ public class Panel : Singleton<Panel>
 
     }
     // 固定时间间隔回调
-    //void FixedUpdate()
-    //{
-    //timer.UpdateTimer();
-    // }
+    void FixedUpdate()
+    {
+    timer.UpdateTimer();
+    }
 
     // 监听socket回调
     void AddSocketIOListener() {
@@ -180,7 +182,14 @@ public class Panel : Singleton<Panel>
 
     // 请求结算
     public void CheckOutGame() {
-        if (GameType != 2) return;
+        if (GameType == 0) return;
+
+        if (GameType == 1) {
+            game.gameState = 3; // 游戏结束
+            CurrentPlayer.Ins.isWinner = (GetWinnerId().ToString() == CurrentPlayer.Ins.user.userid) ? true : false;
+            return;
+        }
+
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqCheckOut", paramstr);
     }
@@ -191,14 +200,7 @@ public class Panel : Singleton<Panel>
         param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
         param.token = CurrentPlayer.Ins.user.token;
         // 胜利者
-        float score = Game.SDGGetScore();
-        if (score>0 && (CurrentPlayer.Ins.user.color == 0) || (score<=0 && CurrentPlayer.Ins.user.color == 1)) {
-            
-            param.winnerid = int.Parse(CurrentPlayer.Ins.user.userid);
-        }
-        else {
-            param.winnerid = int.Parse(CurrentPlayer.Ins.opponent.userid);
-        }
+        param.winnerid = GetWinnerId();
         param.type = 0;// 正常胜利
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqGameEnd", paramstr);
@@ -274,6 +276,7 @@ public class Panel : Singleton<Panel>
         }
         else {
             Debug.Log("GNUGo AI 下棋失败！");
+            GNUComputerMove();
         }
         yield return 0;
     }
@@ -321,34 +324,48 @@ public class Panel : Singleton<Panel>
         // 初始化游戏
         int scale = GoUIManager.Ins.panelScale;
         game = new Game(GameType, scale);
-        
         // 初始化先手棋子颜色
         game.player = 1;
+
+        // 注册计时事件
+        timer = new Timer(game.moveTime);
+        timer.tickEvent += OnTimeEnd;
+        timer.tickSeceondEvent += OnSecond;
+        timerLabel.text = timer._currentTime.ToString();
+
         // 离线游戏直接开始
         if (GameType != 2) StartGame();
 
+        // H-H
         if (GameType == 0) {
             CurrentPlayer.Ins.opponent.username = "友情对手";
         }
+
+        // H-C
         if (GameType == 1) {
             CurrentPlayer.Ins.opponent.username = "GNUGo AI";
-        }
-
-        // 客人执黑
-        if (CurrentPlayer.Ins.isRoomOwner)
-        {
-            CurrentPlayer.Ins.user.color = 0;
-            CurrentPlayer.Ins.opponent.color = 1;
-        }
-        else {
             CurrentPlayer.Ins.user.color = 1;
             CurrentPlayer.Ins.opponent.color = 0;
         }
-        // 注册计时事件
-         //timer = new Timer(game.moveTime);
-        // timer.tickEvent += OnTimeEnd;
-        // timer.tickSeceondEvent += OnSecond;
-        // timerLabel.text = timer._currentTime.ToString();
+
+        // Online
+        if (GameType == 2) {
+            // 客人执黑
+            if (CurrentPlayer.Ins.isRoomOwner)
+            {
+                CurrentPlayer.Ins.user.color = 0;
+                CurrentPlayer.Ins.opponent.color = 1;
+                if (CurrentPlayer.Ins.player_num < 2)
+                    CurrentPlayer.Ins.opponent.username = "";
+            }
+            else
+            {
+                CurrentPlayer.Ins.user.color = 1;
+                CurrentPlayer.Ins.opponent.color = 0;
+                if (CurrentPlayer.Ins.player_num < 2)
+                    CurrentPlayer.Ins.opponent.username = "";
+            }
+        }
 
         // 基本参数
         param = new ParamBase();
@@ -365,7 +382,7 @@ public class Panel : Singleton<Panel>
     {
         game.gameState = 1;
         GameState.text = "游戏开始！";
-        //timer.StartTimer();
+        timer.StartTimer();
     }
 
     // 玩家切换
@@ -376,27 +393,42 @@ public class Panel : Singleton<Panel>
         colorsToMove[game.PlayerToogle()].SetActive(true);
 
         // 重置计时器
-        //timer.ResetTimer();
-       // timer.StartTimer();
-       // timerLabel.text = timer._currentTime.ToString();
+        timer.ResetTimer();
+        timer.StartTimer();
+        timerLabel.text = timer._currentTime.ToString();
 
         UpdateSore();
 
         game.ChangePlayer();
     }
 
+    // 获胜者
+    int GetWinnerId() {
+        float score = Game.SDGGetScore() + game.komi;
+        if (score > 0 && (CurrentPlayer.Ins.user.color == 0) || (score <= 0 && CurrentPlayer.Ins.user.color == 1))
+        {
+
+            return int.Parse(CurrentPlayer.Ins.user.userid);
+        }
+        else
+        {
+            return int.Parse(CurrentPlayer.Ins.opponent.userid);
+        }
+    }
+
     // 更新成绩
     void UpdateSore() {
         // 最新成绩结算
         float wscore = Game.SDGGetScore();
+        string scorestr = wscore.ToString("0.#");
         if (wscore > 0)
         {
-            GameResult.text = "白棋领先" + wscore + "点！";
+            GameResult.text = "白棋领先" + wscore + "目！";
         }
         else
         {
             float bscore = -wscore;
-            GameResult.text = "黑棋领先" + bscore + "点！";
+            GameResult.text = "黑棋领先" + bscore + "目！";
         }
     }
     #endregion
@@ -404,15 +436,15 @@ public class Panel : Singleton<Panel>
     #region 计时器逻辑
     void OnTimeEnd()
     {
-        // Debug.Log("时间到！");
-       // timer.EndTimer();
+         Debug.Log("时间到！");
+        timer.EndTimer();
     }
 
     void OnSecond()
     {
-        //Debug.Log("又一秒！");
+        Debug.Log("又一秒！");
         game.timeUsed++;
-       // timerLabel.text = timer._currentTime.ToString();
+        timerLabel.text = timer._currentTime.ToString();
     }
     #endregion
 

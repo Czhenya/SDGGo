@@ -72,6 +72,10 @@ public class WellComeManager : MonoBehaviour
             case 4: Tip("注册失败！"); break;
             default:Tip(SocketIO.Ins.tiptext); break;
         }
+
+        if (Input.GetMouseButtonDown(1)) {
+            SceneManager.LoadScene("Menu");
+        }
     }
 
     // 提示

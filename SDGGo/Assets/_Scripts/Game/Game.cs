@@ -37,6 +37,7 @@ namespace SDG {
         public int gameState;         // 当前游戏状态： 0-游戏未开始；1-游戏中；3-游戏结束
         public int panelScale;        // 棋盘规模
         public int player;            // 当前棋手，1表示黑子，0表示白子
+        public int komi;              // 黑子贴目
 
         public int moveTime;          // 落子时间
         public int timeUsed;          // 游戏已用时间
@@ -53,6 +54,7 @@ namespace SDG {
         public Game(int _gametype,int _scale)
         {
             player = 1;               // 默认黑子先手
+            komi = 9;
             gameType = _gametype;     // 初始化游戏类型
             gameState = 0;            // 初始化游戏状态
             panelScale = _scale;      // 棋盘规模

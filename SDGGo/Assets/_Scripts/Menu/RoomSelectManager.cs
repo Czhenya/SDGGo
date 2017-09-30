@@ -51,6 +51,7 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
                 {
                     CurrentPlayer.Ins.roomId = dic["roomid"].ToString();
                     CurrentPlayer.Ins.isRoomOwner = true;
+                    CurrentPlayer.Ins.player_num = 1;
                     isEnterRoom = true;
                 }
             }
@@ -66,6 +67,7 @@ public class RoomSelectManager : Singleton<RoomSelectManager> {
                 {
                     CurrentPlayer.Ins.roomId = dic["roomid"].ToString();
                     CurrentPlayer.Ins.isRoomOwner = false;
+                    CurrentPlayer.Ins.player_num = 2;
                     CurrentPlayer.Ins.opponent.userid = dic["userid"].ToString();
                     CurrentPlayer.Ins.opponent.username = dic["name"].ToString();
                     isEnterRoom = true;
