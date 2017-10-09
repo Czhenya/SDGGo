@@ -420,15 +420,16 @@ public class Panel : Singleton<Panel>
     void UpdateSore() {
         // 最新成绩结算
         float wscore = Game.SDGGetScore();
-        string scorestr = wscore.ToString("0.#");
+        float bscore = -wscore;
+        string wscorestr = string.Format("{0:F1}", wscore);
+        string bscorestr = string.Format("{0:F1}",bscore);
         if (wscore > 0)
         {
-            GameResult.text = "白棋领先" + wscore + "目！";
+            GameResult.text = "白棋领先" + wscorestr + "目！";
         }
         else
         {
-            float bscore = -wscore;
-            GameResult.text = "黑棋领先" + bscore + "目！";
+            GameResult.text = "黑棋领先" + bscorestr + "目！";
         }
     }
     #endregion
