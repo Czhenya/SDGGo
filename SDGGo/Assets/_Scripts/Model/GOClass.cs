@@ -42,7 +42,7 @@ namespace SDG
         public User() {
             username = "默认用户名";
             password = "123";
-            userid = "-1000";
+            userid = "-1";
             token = "farhgt7w4t4t4y";
         }
     }

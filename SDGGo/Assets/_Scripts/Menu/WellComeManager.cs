@@ -66,7 +66,7 @@ public class WellComeManager : MonoBehaviour
         // 主线程更新UI
         switch (curStat) {
             case 0: Tip(SocketIO.Ins.tiptext);break;
-            case 1: Tip("登录成功！"); SceneManager.LoadScene("Menu"); break;
+            case 1: Tip("登录成功！"); EnterMenuScene(); break;
             case 2: Tip("登录失败！"); break;
             case 3: Tip("注册成功！"); break;
             case 4: Tip("注册失败！"); break;
@@ -111,5 +111,10 @@ public class WellComeManager : MonoBehaviour
         param.name = uname;
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqSignUp", paramstr);
+    }
+
+    // 进入主页面
+    public void EnterMenuScene() {
+        SceneManager.LoadScene("Menu");
     }
 }
