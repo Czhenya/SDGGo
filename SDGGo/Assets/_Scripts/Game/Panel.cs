@@ -13,21 +13,22 @@ public class Panel : Singleton<Panel>
     public Text GameResult;              // 当前游戏结算
     public Text GameState;               // 游戏状态
     public Text roomidLabel;             // 房间号标签
+    public GameObject start;
+    public GameObject confirm;
     // 对话框
     public GameObject Dialog;
     public GameObject[] colorsToMove;
     public UIPlayer[] players;
 
-
     public Game game;                    // 游戏实例
-    Timer timer;                         // 计时器对象
+    //Timer timer;                         // 计时器对象
     ParamBase param;
 
     // 在线对战:
     object locker = new object();
     Point oppenPos = new Point(0, 0);    // 服务器传来的对手落子位置
     bool isOppenMoved = false;           // 对手是否已落子
-    bool isReqCheckOut = false;          // 请求结算 
+    bool isReqCheckOut = false;          // 请求结算
 
     #region 脚本生命周期
     // 初始化
@@ -48,8 +49,12 @@ public class Panel : Singleton<Panel>
         // 更新玩家信息
         UIPlayer local = players[CurrentPlayer.Ins.user.color];
         UIPlayer oppoent = players[CurrentPlayer.Ins.opponent.color];
+        // 名字
         local.name.text = CurrentPlayer.Ins.user.username;
         oppoent.name.text = CurrentPlayer.Ins.opponent.username;
+        // 状态
+        players[game.player].state.text = "落子中...";
+        players[game.PlayerToogle()].state.text = "";
 
         // 监听游戏状态
         if (game.gameState == 1) {
@@ -83,21 +88,10 @@ public class Panel : Singleton<Panel>
 
     }
 
-    // 显示获胜者信息
-    void ShowWinnerInfo() {
-        if (CurrentPlayer.Ins.winner_id == "-1") {
-            GameState.text = "平局！";
-        }
-
-        User winner = (CurrentPlayer.Ins.winner_id == CurrentPlayer.Ins.user.userid) ? CurrentPlayer.Ins.user : CurrentPlayer.Ins.opponent;
-        string winner_color = winner.color == 1 ? "（黑方）" : "（白方）";
-        GameState.text = winner.username + winner_color + "获胜！";
-    }
-
     // 固定时间间隔回调
     void FixedUpdate()
     {
-    timer.UpdateTimer();
+    //timer.UpdateTimer();
     }
 
     // 监听socket回调
@@ -274,6 +268,9 @@ public class Panel : Singleton<Panel>
         yield return new WaitForSeconds(1);
         int computerplayer = 0;
         Point genm = game.GetGenComputerMove(computerplayer);
+        genm = game.PointCorrect(genm);
+        game.GoPanel[genm.x, genm.y].player = -1;
+        Debug.Log("AI 落子生成："+genm.x + " "+genm.y);
         if (game.player == computerplayer && game.SetMove(genm, computerplayer))
         {
             GoUIManager.Ins.setMove(genm, computerplayer);
@@ -281,7 +278,8 @@ public class Panel : Singleton<Panel>
         }
         else {
             Debug.Log("GNUGo AI 下棋失败！");
-            PlayerChange();
+            game.SetMove(genm,1);
+            StartCoroutine(GNUComputerMove());
         }
         yield return 0;
     }
@@ -314,7 +312,6 @@ public class Panel : Singleton<Panel>
 
     #region 自定义初始化函数
     // 在线对战初始化
-    
     void OnlineInit()
     {
         // 显示房间号
@@ -333,10 +330,10 @@ public class Panel : Singleton<Panel>
         game.player = 1;
 
         // 注册计时事件
-        timer = new Timer(game.moveTime);
-        timer.tickEvent += OnTimeEnd;
-        timer.tickSeceondEvent += OnSecond;
-        timerLabel.text = timer._currentTime.ToString();
+        //timer = new Timer(game.moveTime);
+        //timer.tickEvent += OnTimeEnd;
+        //timer.tickSeceondEvent += OnSecond;
+        //timerLabel.text = timer._currentTime.ToString();
 
         // 离线游戏直接开始
         if (GameType != 2) StartGame();
@@ -386,8 +383,10 @@ public class Panel : Singleton<Panel>
     void StartGame()
     {
         game.gameState = 1;
-        GameState.text = "游戏开始！";
-        timer.StartTimer();
+        GameState.text = "游戏中...";
+        start.SetActive(false);
+        confirm.SetActive(true);
+        //timer.StartTimer();
     }
 
     // 玩家切换
@@ -398,9 +397,9 @@ public class Panel : Singleton<Panel>
         colorsToMove[game.PlayerToogle()].SetActive(true);
 
         // 重置计时器
-        timer.ResetTimer();
-        timer.StartTimer();
-        timerLabel.text = timer._currentTime.ToString();
+        //timer.ResetTimer();
+        //timer.StartTimer();
+        //timerLabel.text = timer._currentTime.ToString();
 
         UpdateSore();
 
@@ -422,6 +421,18 @@ public class Panel : Singleton<Panel>
         {
             return CurrentPlayer.Ins.opponent.userid;
         }
+    }
+    // 显示获胜者信息
+    void ShowWinnerInfo()
+    {
+        if (CurrentPlayer.Ins.winner_id == "-1")
+        {
+            GameState.text = "平局！";
+        }
+
+        User winner = (CurrentPlayer.Ins.winner_id == CurrentPlayer.Ins.user.userid) ? CurrentPlayer.Ins.user : CurrentPlayer.Ins.opponent;
+        string winner_color = winner.color == 1 ? "（黑方）" : "（白方）";
+        GameState.text = winner.username + winner_color + "获胜！";
     }
 
     // 更新成绩
@@ -446,14 +457,14 @@ public class Panel : Singleton<Panel>
     void OnTimeEnd()
     {
          Debug.Log("时间到！");
-        timer.EndTimer();
+        //timer.EndTimer();
     }
 
     void OnSecond()
     {
         Debug.Log("又一秒！");
         game.timeUsed++;
-        timerLabel.text = timer._currentTime.ToString();
+        //timerLabel.text = timer._currentTime.ToString();
     }
     #endregion
 

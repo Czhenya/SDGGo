@@ -22,7 +22,8 @@ public class GoUIManager : Singleton<GoUIManager> {
     GameObject[,] stones = new GameObject[19,19];
     // 鼠标点击坐标记忆
     Point preMouseIndex = new Point(-1,-1);
-
+    Point curMouseIndex = new Point(-1, -1);
+    Vector3 hitpos = Vector3.zero;
 
     void Start () {
         panelInit();
@@ -34,20 +35,26 @@ public class GoUIManager : Singleton<GoUIManager> {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out hit))
             {
-                Vector3 hitpos = hit.point;//得到碰撞点的坐标
-                Point mouseIndex = Pos2Index(hitpos);
-                setRing(mouseIndex);
+                hitpos = hit.point;//得到碰撞点的坐标
+                curMouseIndex = Pos2Index(hitpos);
+                setRing(curMouseIndex);
 
-                if (preMouseIndex.x == mouseIndex.x && preMouseIndex.y == mouseIndex.y)
+                if (preMouseIndex.x == curMouseIndex.x && preMouseIndex.y == curMouseIndex.y)
                 {
                     setMove(Pos2PanelPos(hitpos), Panel.Ins.game.player);
-                    StartCoroutine(SetGNUMove(mouseIndex));
+                    StartCoroutine(SetGNUMove(curMouseIndex));
                 }
                 else {
-                    preMouseIndex = mouseIndex;
+                    preMouseIndex = curMouseIndex;
                 }
             }
         }
+    }
+
+    // 确认落子
+    public void ConfirmMove() {
+        setMove(Pos2PanelPos(hitpos), Panel.Ins.game.player);
+        StartCoroutine(SetGNUMove(curMouseIndex));
     }
 
     // 返回主菜单

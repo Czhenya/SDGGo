@@ -7,7 +7,7 @@ using SDG;
 
 public class SocketIO : Singleton<SocketIO> {
 
-    string serverURL = "http://10.246.60.27:8888";
+    string serverURL = "http://139.196.193.91:8000";
 
     public Socket sdgSocket;
     public static bool isConnected = false; // 连接状态

@@ -91,6 +91,15 @@ namespace SDG {
             return p.x >= 0 && p.x < panelScale && p.y >= 0 && p.y < panelScale;
         }
 
+        public Point PointCorrect(Point p) {
+            Point cp = p;
+            if (cp.x < 0) cp.x = 0;
+            if (cp.x >= panelScale) cp.x = panelScale - 1;
+            if (cp.y < 0) cp.y = 0;
+            if (cp.y >= panelScale) cp.y = panelScale - 1;
+            return cp;
+        }
+
         // 获得指定位置的棋子状态
         public int GetPanelPlayer(Point index)
         {
@@ -116,7 +125,12 @@ namespace SDG {
             if (IsOperationAllowed(index))
             {
                 // GNUGo落子确认
-                if (!SetGNUGoMove(index,color)) return false;
+                if (!SetGNUGoMove(index, color)) {
+                    // 落子失败恢复状态
+                    Debug.Log("GNUGO 落子失败！");
+                    GoPanel[index.x, index.y].player = curplayer;
+                    return false;
+                }
 
                 // 添加新棋子
                 Move newMove = GoPanel[index.x, index.y];
@@ -134,7 +148,7 @@ namespace SDG {
         // 在gnugo棋盘指定位置落子
         public bool SetGNUGoMove(Point index, int color) {
             Point gnup = XY2IJ(index);
-            if (SDGPlayMove(gnup.x, gnup.y, color))
+            if (SDGPlayMove(gnup.x, gnup.y, color)==1)
                 return true;
             return false;
         }
@@ -316,6 +330,10 @@ namespace SDG {
         #endregion
 
         #region 运行时动态链接库
+
+#if UNITY_EDITOR
+
+        // 测试
         [DllImport("sdggnugo")]
         public static extern int Add(int x, int y);
 
@@ -329,11 +347,31 @@ namespace SDG {
 
         // 在gnugo棋盘上指定位置落子，并返回是否落子成功
         [DllImport("sdggnugo")]
-        public static extern bool SDGPlayMove(int i, int j, int color);
+        public static extern int SDGPlayMove(int i, int j, int color);
 
         // gnugo落子一步并返回一维落子坐标，如果落子失败返回-1
         [DllImport("sdggnugo")]
         public static extern int SDGGenComputerMove(int color);
+        
+#else
+        
+        // 初始化gnugo
+        [DllImport("gnuGo-3.8")]
+        public static extern void SDGGoInit(int boardsize);
+
+        // 获取当前打分，正数黑子领先，负数白子领先
+        [DllImport("gnuGo-3.8")]
+        public static extern float SDGGetScore();
+
+        // 在gnugo棋盘上指定位置落子，并返回是否落子成功
+        [DllImport("gnuGo-3.8")]
+        public static extern int SDGPlayMove(int i, int j, int color);
+
+        // gnugo落子一步并返回一维落子坐标，如果落子失败返回-1
+        [DllImport("gnuGo-3.8")]
+        public static extern int SDGGenComputerMove(int color);
+        
+#endif
         #endregion
 
     }

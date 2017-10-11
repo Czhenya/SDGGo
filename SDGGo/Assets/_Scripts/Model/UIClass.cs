@@ -12,6 +12,7 @@ public class UIPlayer {
     public Image avatar;
     public Text name;
     public Image color;
+    public Text state;
 }
 
 public class UIClass {
