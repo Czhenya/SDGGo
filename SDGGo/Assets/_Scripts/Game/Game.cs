@@ -73,7 +73,7 @@ namespace SDG {
             // 初始化gnugo
             SDGGoInit(_scale);
         }
-        #region 工具函数
+        #region 对外接口函数
         // 获取玩家对手
         public int PlayerToogle()
         {
@@ -91,6 +91,7 @@ namespace SDG {
             return p.x >= 0 && p.x < panelScale && p.y >= 0 && p.y < panelScale;
         }
 
+        // 坐标移除矫正
         public Point PointCorrect(Point p) {
             Point cp = p;
             if (cp.x < 0) cp.x = 0;
@@ -109,29 +110,51 @@ namespace SDG {
                 return 404;
         }
 
-#endregion
+        // 自动提子
+        public void CheckNoLiberty(Point curPos)
+        {
+            GoPanel[curPos.x, curPos.y].player = player;
+            Point top = new Point(curPos.x, curPos.y + 1);
+            Point bottom = new Point(curPos.x, curPos.y - 1);
+            Point left = new Point(curPos.x - 1, curPos.y);
+            Point right = new Point(curPos.x + 1, curPos.y);
+
+            if (IsPointAllowed(top) && GetPanelPlayer(top) == PlayerToogle())
+                EatNoLiberty(top);
+            if (IsPointAllowed(bottom) && GetPanelPlayer(bottom) == PlayerToogle())
+                EatNoLiberty(bottom);
+            if (IsPointAllowed(left) && GetPanelPlayer(left) == PlayerToogle())
+                EatNoLiberty(left);
+            if (IsPointAllowed(right) && GetPanelPlayer(right) == PlayerToogle())
+                EatNoLiberty(right);
+        }
+
+        // 撤销上一次提子
+        public void RecoverLastDelete()
+        {
+            for (int i = Moves.Count - 2; ; --i)
+            {
+                if (Moves[i].removed)
+                {
+                    Debug.Log("出现提子撤销操作！！！");
+                    Moves[i].removed = false;
+                    GoUIManager.Ins.recoverMove(Moves[i].pos);
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }
+
+        #endregion
 
         #region 落子函数
-        // 本地棋盘落子操作
+        // 逻辑棋盘落子操作
         public bool SetMove(Point index, int color) {
-            // 更新棋盘棋子状态
-            int curplayer = GoPanel[index.x, index.y].player;
-            // 只能落在无子位置
-            if (curplayer != -1) return false;
-            GoPanel[index.x, index.y].player = color;
-            // 尝试提子
-            CheckNoLiberty(index);
             // 落子合法性
-            if (IsOperationAllowed(index))
+            if (IsOperationAllowed(index) && SetGNUGoMove(index, color))
             {
-                // GNUGo落子确认
-                if (!SetGNUGoMove(index, color)) {
-                    // 落子失败恢复状态
-                    Debug.Log("GNUGO 落子失败！");
-                    GoPanel[index.x, index.y].player = curplayer;
-                    return false;
-                }
-
                 // 添加新棋子
                 Move newMove = GoPanel[index.x, index.y];
                 Moves.Add(newMove);
@@ -140,7 +163,8 @@ namespace SDG {
             else
             {
                 // 落子失败恢复状态
-                GoPanel[index.x, index.y].player = curplayer;
+                GoPanel[index.x, index.y].player = -1;
+                Debug.Log("逻辑落子失败！！！");
                 return false;
             }
         }
@@ -150,6 +174,7 @@ namespace SDG {
             Point gnup = XY2IJ(index);
             if (SDGPlayMove(gnup.x, gnup.y, color)==1)
                 return true;
+            Debug.Log("GNUGO逻辑拒绝落子！");
             return false;
         }
 
@@ -282,23 +307,6 @@ namespace SDG {
             return false;
         }
 
-        // 自动提子
-        void CheckNoLiberty(Point curPos)
-        {
-            Point top = new Point(curPos.x, curPos.y + 1);
-            Point bottom = new Point(curPos.x, curPos.y - 1);
-            Point left = new Point(curPos.x - 1, curPos.y);
-            Point right = new Point(curPos.x + 1, curPos.y);
-
-            if (IsPointAllowed(top) && GetPanelPlayer(top) == PlayerToogle())
-                EatNoLiberty(top);
-            if (IsPointAllowed(bottom) && GetPanelPlayer(bottom) == PlayerToogle())
-                EatNoLiberty(bottom);
-            if (IsPointAllowed(left) && GetPanelPlayer(left) == PlayerToogle())
-                EatNoLiberty(left);
-            if (IsPointAllowed(right) && GetPanelPlayer(right) == PlayerToogle())
-                EatNoLiberty(right);
-        }
         // 提子
         void EatNoLiberty(Point start)
         {
@@ -312,11 +320,13 @@ namespace SDG {
                     Debug.Log("断气棋子点" + i + ":(" + closedList[i].x + ", " + closedList[i].y + ")");
                     for (int j = 0; j < Moves.Count; ++j)
                     {
+                        // 跳过已经被提掉的棋子
+                        if (Moves[j].removed) continue;
                         Point index = Moves[j].pos;
                         if (closedList[i].x == index.x && closedList[i].y == index.y)
                         {
                             // 从已下棋子中移除
-                            Moves.RemoveAt(j);
+                            Moves[j].removed = true;
                             GoUIManager.Ins.deleteMove(index);
                             // 恢复棋盘棋子状态为无子
                             GoPanel[index.x, index.y].player = -1;

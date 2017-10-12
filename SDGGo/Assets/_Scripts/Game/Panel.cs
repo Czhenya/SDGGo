@@ -14,7 +14,7 @@ public class Panel : Singleton<Panel>
     public Text GameState;               // 游戏状态
     public Text roomidLabel;             // 房间号标签
     public GameObject start;
-    public GameObject confirm;
+    
     // 对话框
     public GameObject Dialog;
     public GameObject[] colorsToMove;
@@ -230,6 +230,7 @@ public class Panel : Singleton<Panel>
     bool SetMove_H_C(Point index)
     {
         int huamnplayer = 1;
+        // 玩家落子成功后电脑下棋
         if (game.player == huamnplayer && game.SetMove(index, huamnplayer))
         {
             PlayerChange();
@@ -288,7 +289,10 @@ public class Panel : Singleton<Panel>
     public bool SelectMove(Point mouseIndex)
     {
         // 非游戏状态
-        if (game.gameState != 1) return false;
+        if (game.gameState != 1) {
+            Debug.Log("游戏未开始！");
+            return false;
+        }
         bool success = false;
 
         // 鼠标坐标转换到0-1空间
@@ -385,7 +389,6 @@ public class Panel : Singleton<Panel>
         game.gameState = 1;
         GameState.text = "游戏中...";
         start.SetActive(false);
-        confirm.SetActive(true);
         //timer.StartTimer();
     }
 

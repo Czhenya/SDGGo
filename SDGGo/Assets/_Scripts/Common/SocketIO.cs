@@ -34,13 +34,13 @@ public class SocketIO : Singleton<SocketIO> {
     // 初始化并开始socket监听
     public void OpenSocket()
     {
-        TIP("trying to connect socket server...");
+        TIP("正在连接到服务器...");
         if (sdgSocket == null)
         {
             sdgSocket = IO.Socket(serverURL);
 
             sdgSocket.On("connect", () => {
-                TIP("socket connected!");
+                TIP("连接服务器成功!");
                 isConnected = true;
             });
         }
@@ -55,7 +55,7 @@ public class SocketIO : Singleton<SocketIO> {
             sdgSocket = null;
             isConnected = false;
         }
-        Debug.Log("socket closed!");
+        Debug.Log("服务器断开!");
     }
 
 #endregion

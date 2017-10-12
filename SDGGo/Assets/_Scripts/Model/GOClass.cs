@@ -21,13 +21,15 @@ namespace SDG
     public class Move
     {
         public Point pos;
-        public int player; // 0:白子 1:黑子 -1:无子
-        public int worm;   // 形势值0
+        public int player;   // 0:白子 1:黑子 -1:无子
+        public int worm;     // 形势值0
+        public bool removed; // 是否被提掉
         public Move(Point _pos,int _player)
         {
             pos = _pos;
             player = _player;
             worm = 0;
+            removed = false;
         }
     }
 
