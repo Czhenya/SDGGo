@@ -53,9 +53,7 @@ public class Panel : Singleton<Panel>
             StartGame();
         }
         else if (game.gameState == 3) {
-            // 游戏结束
-            ShowWinnerInfo();
-            CurrentPlayer.Ins.Reset();
+            
         }
 
         // 对手落子
@@ -126,9 +124,9 @@ public class Panel : Singleton<Panel>
                 int type = int.Parse(dic["type"].ToString()); /* 0: 正常胜利 1: 有人认输 2: 有人掉线 */
                 string winner_id = dic["winnerid"].ToString();
                 string winner_name = dic["winnername"].ToString();
-
                 game.gameState = 3; // 游戏结束
                 CurrentPlayer.Ins.winner_id = winner_id;
+                GameOver();
             }
         });
 
@@ -154,6 +152,13 @@ public class Panel : Singleton<Panel>
         SocketIO.Ins.sdgSocket.Emit("ReqGameStart",paramstr);
     }
 
+    // 游戏结束
+    void GameOver() {
+        // 游戏结束
+        ShowWinnerInfo();
+        CurrentPlayer.Ins.Reset();
+    }
+
     // 认输
     public void GiveUpGame()
     {
@@ -162,6 +167,7 @@ public class Panel : Singleton<Panel>
         // 游戏结束
         CurrentPlayer.Ins.winner_id = CurrentPlayer.Ins.opponent.userid;
         game.gameState = 3;
+        GameOver();
 
         if (GameType == 1) return;
 
@@ -176,9 +182,12 @@ public class Panel : Singleton<Panel>
 
     // 请求结算
     public void CheckOutGame() {
-        if (GameType == 0 || GameType == 1) {
+        if (GameType == 0) return;
+
+        if (GameType == 1) {
             game.gameState = 3; // 游戏结束
             CurrentPlayer.Ins.winner_id = GetWinnerId();
+            GameOver();
             return;
         }
 
@@ -193,12 +202,9 @@ public class Panel : Singleton<Panel>
         param.token = CurrentPlayer.Ins.user.token;
         // 胜利者
         param.winnerid = int.Parse(GetWinnerId());
-        param.type = 0;// 正常胜利
+        param.type = 0;// 正常胜利 
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqGameEnd", paramstr);
-
-        CurrentPlayer.Ins.winner_id = CurrentPlayer.Ins.user.userid;
-        game.gameState = 3;
         CloseDialog();
     }
 
@@ -435,15 +441,15 @@ public class Panel : Singleton<Panel>
         {
             gameendui.text_gameendresult.text = "平局";
         }
+        gameendui.object_gameendicon[0].SetActive(false);
+        gameendui.object_gameendicon[1].SetActive(false);
         if (CurrentPlayer.Ins.winner_id == CurrentPlayer.Ins.user.userid)
         {
             // 胜利
             gameendui.object_gameendicon[0].SetActive(true);
-            gameendui.object_gameendicon[1].SetActive(false);
         }
         else {
             // 失败
-            gameendui.object_gameendicon[0].SetActive(false);
             gameendui.object_gameendicon[1].SetActive(true);
         }
         User winner = (CurrentPlayer.Ins.winner_id == CurrentPlayer.Ins.user.userid) ? CurrentPlayer.Ins.user : CurrentPlayer.Ins.opponent;

@@ -47,7 +47,7 @@ public class SocketIO : Singleton<SocketIO> {
     }
 
     // 断开socket监听
-    void CloseSocket()
+    public void CloseSocket()
     {
         if (sdgSocket != null)
         {
