@@ -5,14 +5,14 @@ using SDG;
 
 public class CurrentPlayer : Singleton<CurrentPlayer>
 {
-    public User user;             // 用户信息
 
     // 在线游戏全局数据
+    public User user;             // 用户信息
     public User opponent;         // 对手信息
     public string roomId;         // 房间号
     public int player_num;        // 房间人数
     public bool isRoomOwner;      // 是否是房主
-    public string winner_id;
+    public string winner_id;      // 获胜者id
 
     void Start()
     {

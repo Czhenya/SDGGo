@@ -9,7 +9,6 @@ using SDG;
 public class RoomSelectManager : Singleton<RoomSelectManager> {
 
     public GameObject RoomItemPrefab = null;
-    //public List<GameObject> roomItems = null;
     public GameObject RoomContent = null;
 
     List<RoomInfo> roomList = new List<RoomInfo>();   // 房间列表容器

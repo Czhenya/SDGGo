@@ -15,6 +15,10 @@ public class MenuManager : MonoBehaviour {
 		
 	}
 
+    public void BackToLogin() {
+        SceneManager.LoadScene("Wellcome");
+    }
+
     public void GameHH() {
         SceneManager.LoadScene("GAME_H_H");
     }

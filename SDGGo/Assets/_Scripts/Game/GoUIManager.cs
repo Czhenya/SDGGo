@@ -13,6 +13,7 @@ public class GoUIManager : Singleton<GoUIManager> {
     public GameObject confirm;    // 确认落子按钮
     public LineRenderer line_vertical;
     public LineRenderer line_horizontal;
+
     // 四个角
     public Transform LTCorner, RTCorner, LBCorner, RBCorner;
     public int panelScale = 19;
@@ -132,7 +133,7 @@ public class GoUIManager : Singleton<GoUIManager> {
         // 显示选中位置光标
         setRing(curIndex);
         // 显示确认落子按钮
-        confirm.SetActive(true);
+        if(Panel.Ins.game.gameState == 1) confirm.SetActive(true);
     }
 
     // 确认落子
