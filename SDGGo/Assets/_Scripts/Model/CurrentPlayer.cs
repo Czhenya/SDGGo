@@ -19,14 +19,14 @@ public class CurrentPlayer : Singleton<CurrentPlayer>
         user = new User();
         user.userid = "643789";
         user.color = 1;
+        opponent = new User();
+        opponent.userid = "649869";
+        opponent.color = 0;
         Reset();
     }
 
     public void Reset()
     {
-        opponent = new User();
-        opponent.userid = "649869";
-        opponent.color = 0;
         roomId = "";
         isRoomOwner = false;         // 默认不是房主
         winner_id = "-1";

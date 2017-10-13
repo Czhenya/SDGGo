@@ -65,18 +65,21 @@ public class Panel : Singleton<Panel>
             // 游戏结束
             ShowWinnerInfo();
             CurrentPlayer.Ins.Reset();
-            game.gameState = 0;
         }
 
         // 对手落子
         if (isOppenMoved)
         {
             isOppenMoved = false;
+            // 界面落子
+            GoUIManager.Ins.setMove(oppenPos, game.player);
+            // 逻辑落子
             if (game.SetMove(oppenPos, game.player))
             {
-                // UI move
-                GoUIManager.Ins.setMove(oppenPos, game.player);
                 PlayerChange();
+            }
+            else {
+                Debug.Log("对手落子异常！");
             }
         }
 
@@ -167,7 +170,6 @@ public class Panel : Singleton<Panel>
 
         // 游戏结束
         CurrentPlayer.Ins.winner_id = CurrentPlayer.Ins.opponent.userid;
-        ShowWinnerInfo();
         game.gameState = 3;
 
         if (GameType == 1) return;
@@ -204,6 +206,8 @@ public class Panel : Singleton<Panel>
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqGameEnd", paramstr);
 
+        CurrentPlayer.Ins.winner_id = CurrentPlayer.Ins.user.userid;
+        game.gameState = 3;
         CloseDialog();
     }
 
@@ -219,7 +223,6 @@ public class Panel : Singleton<Panel>
     {
         if (game.SetMove(index, game.player))
         {
-            PlayerChange();
             return true;
         }
         else {
@@ -233,8 +236,6 @@ public class Panel : Singleton<Panel>
         // 玩家落子成功后电脑下棋
         if (game.player == huamnplayer && game.SetMove(index, huamnplayer))
         {
-            PlayerChange();
-            StartCoroutine(GNUComputerMove());
             return true;
         }
         else
@@ -249,7 +250,6 @@ public class Panel : Singleton<Panel>
         {
             if (game.SetMove(index, game.player))
             {
-                PlayerChange();
                 // 通知服务器
                 ParamPlayMove param = new ParamPlayMove();
                 param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
@@ -272,21 +272,24 @@ public class Panel : Singleton<Panel>
         genm = game.PointCorrect(genm);
         game.GoPanel[genm.x, genm.y].player = -1;
         Debug.Log("AI 落子生成："+genm.x + " "+genm.y);
+        // 界面落子
+        GoUIManager.Ins.setMove(genm, computerplayer);
         if (game.player == computerplayer && game.SetMove(genm, computerplayer))
         {
-            GoUIManager.Ins.setMove(genm, computerplayer);
+            // 落子成功
             PlayerChange();
         }
         else {
+            // 失败撤销
+            GoUIManager.Ins.deleteMove(genm);
+            PlayerChange();
             Debug.Log("GNUGo AI 下棋失败！");
-            game.SetMove(genm,1);
-            StartCoroutine(GNUComputerMove());
         }
         yield return 0;
     }
 
-    // 选子操作
-    public bool SelectMove(Point mouseIndex)
+    // 不同模式落子
+    public bool SetTypedMove(Point mouseIndex)
     {
         // 非游戏状态
         if (game.gameState != 1) {
@@ -302,7 +305,12 @@ public class Panel : Singleton<Panel>
                 success = SetMove_H_H(mouseIndex);
                 break;
             case 1:
-                success = SetMove_H_C(mouseIndex);
+                // 玩家先下棋
+                if (game.player == 1) {
+                    success = SetMove_H_C(mouseIndex);
+                    // 玩家下棋成功后AI下棋
+                    if (success) StartCoroutine(GNUComputerMove());
+                }
                 break;
             case 2:
                 success = SetMove_Online(mouseIndex);
@@ -393,7 +401,7 @@ public class Panel : Singleton<Panel>
     }
 
     // 玩家切换
-    void PlayerChange()
+    public void PlayerChange()
     {
         // 下棋指示切换
         colorsToMove[game.player].SetActive(false);

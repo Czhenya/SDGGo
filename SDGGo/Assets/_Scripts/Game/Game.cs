@@ -170,7 +170,7 @@ namespace SDG {
         }
 
         // 在gnugo棋盘指定位置落子
-        public bool SetGNUGoMove(Point index, int color) {
+        bool SetGNUGoMove(Point index, int color) {
             Point gnup = XY2IJ(index);
             if (SDGPlayMove(gnup.x, gnup.y, color)==1)
                 return true;
@@ -341,7 +341,7 @@ namespace SDG {
 
         #region 运行时动态链接库
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || UNITY_STANDALONE_WIN
 
         // 测试
         [DllImport("sdggnugo")]
@@ -362,8 +362,8 @@ namespace SDG {
         // gnugo落子一步并返回一维落子坐标，如果落子失败返回-1
         [DllImport("sdggnugo")]
         public static extern int SDGGenComputerMove(int color);
-        
-#else
+
+#elif UNITY_ANDROID
         
         // 初始化gnugo
         [DllImport("gnuGo-3.8")]
