@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
@@ -36,13 +37,13 @@ namespace SDG {
         public int gameType;          // 游戏类型：0-人人；1-人机；2-在线对战
         public int gameState;         // 当前游戏状态： 0-游戏未开始；1-游戏中；3-游戏结束
         public int panelScale;        // 棋盘规模
-        public int player;            // 当前棋手，1表示黑子，0表示白子
+        public int player;            // color:当前棋手颜色，1表示黑子，0表示白子
         public int komi;              // 黑子贴目
 
-        public int moveTime;          // 落子时间
-        public int timeUsed;          // 游戏已用时间
+        //public int moveTime;          // 落子时间
+        //public int timeUsed;          // 游戏已用时间
 
-        public List<Move> Moves = new List<Move>();    // 已下棋子(按照落子顺序)
+        public List<Move> Moves = new List<Move>();    // 已下棋子(按照落子顺序,包括被提掉的棋子)
         public Move[,] GoPanel = new Move[19, 19];     // 整个棋盘棋子二维数组
 
         // 作为队列结构的open表和close表，用于计算棋串的气
@@ -54,12 +55,12 @@ namespace SDG {
         public Game(int _gametype,int _scale)
         {
             player = 1;               // 默认黑子先手
-            komi = 9;
+            komi = 0;
             gameType = _gametype;     // 初始化游戏类型
             gameState = 0;            // 初始化游戏状态
             panelScale = _scale;      // 棋盘规模
-            moveTime = 10;            // 落子时间限制
-            timeUsed = 0;
+            //moveTime = 10;            // 落子时间限制
+            //timeUsed = 0;
 
             // 初始化棋盘棋子对象
             for (int i = 0; i < panelScale; ++i)
@@ -74,7 +75,8 @@ namespace SDG {
             SDGGoInit(_scale);
         }
         #region 对外接口函数
-        // 获取玩家对手
+
+        // 获取当前玩家对手
         public int PlayerToogle()
         {
             return (player + 1) % 2;
@@ -91,7 +93,7 @@ namespace SDG {
             return p.x >= 0 && p.x < panelScale && p.y >= 0 && p.y < panelScale;
         }
 
-        // 坐标移除矫正
+        // 坐标溢出矫正
         public Point PointCorrect(Point p) {
             Point cp = p;
             if (cp.x < 0) cp.x = 0;
@@ -106,11 +108,14 @@ namespace SDG {
         {
             if (IsPointAllowed(index))
                 return GoPanel[index.x, index.y].player;
-            else
+            else {
+                Debug.Log("坐标不合法，无法获取棋子状态");
+                throw new Exception("坐标不合法，无法获取棋子状态");
                 return 404;
+            }
         }
 
-        // 自动提子
+        // 提子
         public void CheckNoLiberty(Point curPos)
         {
             GoPanel[curPos.x, curPos.y].player = player;
@@ -149,7 +154,7 @@ namespace SDG {
 
         #endregion
 
-        #region 落子函数
+        #region 逻辑落子函数
         // 逻辑棋盘落子操作
         public bool SetMove(Point index, int color) {
             // 落子合法性
@@ -175,7 +180,7 @@ namespace SDG {
             if (SDGPlayMove(gnup.x, gnup.y, color)==1)
                 return true;
             Debug.Log("GNUGO逻辑拒绝落子！");
-            return false;
+            return true; // 暂时关闭GNUGo的落子逻辑判断
         }
 
         // gnugo智能计算指定颜色最优的落子点落子

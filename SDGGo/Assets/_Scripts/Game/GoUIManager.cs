@@ -7,11 +7,11 @@ using SDG;
 
 public class GoUIManager : Singleton<GoUIManager> {
 
-    public GameObject whiteStone; // 白子
-    public GameObject blackStone; // 黑子
-    public GameObject stoneRing;  // 指示环
-    public GameObject confirm;    // 确认落子按钮
-    public LineRenderer line_vertical;
+    public GameObject whiteStone;           // 白子
+    public GameObject blackStone;           // 黑子
+    //public GameObject stoneRing;          // 指示环
+    public GameObject confirm;              // 确认落子按钮
+    public LineRenderer line_vertical;      // 指示线
     public LineRenderer line_horizontal;
 
     // 四个角
@@ -20,6 +20,7 @@ public class GoUIManager : Singleton<GoUIManager> {
     public float panelBorder = 0.1f;   // 棋盘边界
     public float panelWidth;           // 棋盘宽度
     float gapWidth;                    // 格子宽度
+
     // 棋子容器
     GameObject[,] stones = new GameObject[19,19];
     // 鼠标点击坐标记忆
@@ -61,7 +62,7 @@ public class GoUIManager : Singleton<GoUIManager> {
         panelWidth = RTCorner.position.x - LTCorner.position.x;
         gapWidth = panelWidth / (panelScale - 1);
 
-        stoneRing.SetActive(false);
+        //stoneRing.SetActive(false);
     }
 
     // 上下左右移动
@@ -158,6 +159,7 @@ public class GoUIManager : Singleton<GoUIManager> {
         Vector3 stonePos = new Vector3(mousePos.x,mousePos.y,1);
         GameObject stoneColor = color == 1 ? blackStone : whiteStone;
         Point index = Pos2Index(mousePos);
+        Destroy(stones[index.x, index.y]);
         stones[index.x, index.y] = Instantiate(stoneColor, stonePos, stoneColor.transform.rotation);
         setRing(stonePos);
         // 提子
@@ -177,15 +179,26 @@ public class GoUIManager : Singleton<GoUIManager> {
             // 撤销提子
             Panel.Ins.game.RecoverLastDelete();
         }
-        Panel.Ins.PlayerChange();
-        // 隐藏确认落子按钮
-        confirm.SetActive(false);
+        else {
+            Panel.Ins.PlayerChange();
+            // 隐藏确认落子按钮
+            confirm.SetActive(false);
+        }
         yield return 0;
     }
 
     // 移除界面指定棋子
     public void deleteMove(Point index) {
-        stones[index.x, index.y].SetActive(false);
+        if(stones[index.x, index.y])
+            stones[index.x, index.y].SetActive(false);
+    }
+    // 清空棋盘
+    public void ClearAllMoves() {
+        for (int i = 0; i < panelScale; ++i) {
+            for (int j = 0; j < panelScale; ++j) {
+                deleteMove(new Point(i,j));
+            }
+        }
     }
     // 恢复界面指定棋子
     public void recoverMove(Point index) {
@@ -198,8 +211,7 @@ public class GoUIManager : Singleton<GoUIManager> {
         setRing(Index2PanelPos(index));
     }
     public void setRing(Vector3 pos) {
-        stoneRing.transform.position = pos;
-        stoneRing.SetActive(false); // 隐藏环不再使用
+        //stoneRing.transform.position = pos;
 
         float line_ver_x = pos.x;
         float line_hor_y = pos.y;

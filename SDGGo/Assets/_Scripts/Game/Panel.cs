@@ -8,30 +8,28 @@ using SDG;
 [ExecuteInEditMode]
 public class Panel : Singleton<Panel>
 {
-    public int GameType;                 // 游戏类型：0-人人；1-人机；2-在线对战
+    public int GameType;                 // 游戏类型(编辑器序列化传入)：0-人人；1-人机；2-在线对战
+
     public UIGame gameui;
     public UIGameEnd gameendui;
-    public Game game;                    // 游戏实例
-    //Timer timer;                         // 计时器对象
+
+    public Game game = null;                    // 游戏实例
+    //Timer timer;                       // 计时器对象
     ParamBase param;
 
     // 在线对战:
     object locker = new object();
     Point oppenPos = new Point(0, 0);    // 服务器传来的对手落子位置
-    bool isOppenMoved = false;           // 对手是否已落子
-    bool isReqCheckOut = false;          // 请求结算
+    bool isOppenMoved = false;           // 对手是否已落子开关
+    bool isGameStart = false;             // 游戏开始开关
+    bool isGameOver = false;             // 游戏结束开关
+    bool isReqCheckOut = false;          // 请求结算开关
 
     #region 脚本生命周期
     // 初始化
     void Start()
     {
-        // 初始化
-        InitialData();
-        // 在线对战初始化
-        if (GameType == 2)
-        {
-            OnlineInit();
-        }
+        ReStartGame();
     }
 
     // 帧回调
@@ -47,13 +45,16 @@ public class Panel : Singleton<Panel>
         gameui.players[game.player].state.text = "落子中...";
         gameui.players[game.PlayerToogle()].state.text = "";
 
-        // 监听游戏状态
-        if (game.gameState == 1) {
-            // 游戏开始
+        // 游戏开始
+        if (isGameStart) {
+            isGameStart = false;
             StartGame();
         }
-        else if (game.gameState == 3) {
-            
+
+        // 游戏结束
+        if (isGameOver) {
+            isGameOver = false;
+            GameOver();
         }
 
         // 对手落子
@@ -94,16 +95,16 @@ public class Panel : Singleton<Panel>
             Dictionary<string, int> dic = JsonConvert.DeserializeObject<Dictionary<string, int>>(data.ToString());
             int room = dic["roomid"];
             Debug.Log("游戏开始！房间号：" + room);
-            lock (game)
+            lock (locker)
             {
-                Panel.Ins.game.gameState = 1;
+                isGameStart = true;
             }
         });
 
         // 监听对手落子
         SocketIO.Ins.sdgSocket.On("RetOperatePiece", (data) =>
         {
-            lock (oppenPos)
+            lock (locker)
             {
                 Dictionary<string, int> dic = JsonConvert.DeserializeObject<Dictionary<string, int>>(data.ToString());
                 Debug.Log("RetOperatePiece:" + data);
@@ -124,9 +125,8 @@ public class Panel : Singleton<Panel>
                 int type = int.Parse(dic["type"].ToString()); /* 0: 正常胜利 1: 有人认输 2: 有人掉线 */
                 string winner_id = dic["winnerid"].ToString();
                 string winner_name = dic["winnername"].ToString();
-                game.gameState = 3; // 游戏结束
                 CurrentPlayer.Ins.winner_id = winner_id;
-                GameOver();
+                isGameOver = true;
             }
         });
 
@@ -155,6 +155,7 @@ public class Panel : Singleton<Panel>
     // 游戏结束
     void GameOver() {
         // 游戏结束
+        game.gameState = 3;
         ShowWinnerInfo();
         CurrentPlayer.Ins.Reset();
     }
@@ -162,15 +163,15 @@ public class Panel : Singleton<Panel>
     // 认输
     public void GiveUpGame()
     {
-        if (GameType == 0) return;
+        if (GameType == 0) return; // 离线人-人不可认输
 
         // 游戏结束
         CurrentPlayer.Ins.winner_id = CurrentPlayer.Ins.opponent.userid;
-        game.gameState = 3;
         GameOver();
 
-        if (GameType == 1) return;
+        if (GameType == 1) return; // 人机不需要通知服务器
 
+        // 在线对战通知服务器有人认输
         ParamGameEnd param = new ParamGameEnd();
         param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
         param.token = CurrentPlayer.Ins.user.token;
@@ -182,20 +183,20 @@ public class Panel : Singleton<Panel>
 
     // 请求结算
     public void CheckOutGame() {
-        if (GameType == 0) return;
 
-        if (GameType == 1) {
-            game.gameState = 3; // 游戏结束
+        // 本地直接结算
+        if (GameType != 2) {
             CurrentPlayer.Ins.winner_id = GetWinnerId();
             GameOver();
             return;
         }
 
+        // 在线对战要通知服务器告知对手确认结算
         string paramstr = JsonConvert.SerializeObject(param);
         SocketIO.Ins.sdgSocket.Emit("ReqCheckOut", paramstr);
     }
 
-    // 确认结算
+    // 通知服务器确认结算
     public void ConfirmCheckOut() {
         ParamGameEnd param = new ParamGameEnd();
         param.userid = int.Parse(CurrentPlayer.Ins.user.userid);
@@ -212,6 +213,36 @@ public class Panel : Singleton<Panel>
     public void CloseDialog() {
         gameui.checkoutDialog.SetActive(false);
     }
+
+    // 重新开始游戏
+    public void ReStartGame() {
+        // 初始化
+        InitialData();
+        // 在线对战初始化
+        if (GameType == 2)
+        {
+            OnlineInit();
+        }
+        // 显示游戏界面UI
+        gameui.object_gameui.SetActive(true);
+        // 隐藏游戏结束界面
+        gameendui.object_gameendui.SetActive(false);
+        // 清空棋盘
+        GoUIManager.Ins.ClearAllMoves();
+        gameui.text_GameResult.text = "白棋领先"+game.komi+"目";
+    }
+
+    // 继续游戏
+    public void ContinueGame() {
+        // 在线对战不可续战
+        if (GameType == 2) return;
+        StartGame();
+        // 显示游戏界面UI
+        gameui.object_gameui.SetActive(true);
+        // 隐藏游戏结束界面
+        gameendui.object_gameendui.SetActive(false);
+    }
+
     #endregion
 
     #region 落子操作
@@ -413,7 +444,7 @@ public class Panel : Singleton<Panel>
 
         game.ChangePlayer();
     }
-
+     
     // 获胜者
     string GetWinnerId() {
         float score = Game.SDGGetScore();
@@ -437,13 +468,16 @@ public class Panel : Singleton<Panel>
         gameui.object_gameui.SetActive(false);
         // 显示游戏结束界面
         gameendui.object_gameendui.SetActive(true);
+        gameendui.object_gameendicon[0].SetActive(false);
+        gameendui.object_gameendicon[1].SetActive(false);
+
         if (CurrentPlayer.Ins.winner_id == "-1")
         {
             gameendui.text_gameendresult.text = "平局";
+            return;
         }
-        gameendui.object_gameendicon[0].SetActive(false);
-        gameendui.object_gameendicon[1].SetActive(false);
-        if (CurrentPlayer.Ins.winner_id == CurrentPlayer.Ins.user.userid)
+        
+        if (GameType == 0 || CurrentPlayer.Ins.winner_id == CurrentPlayer.Ins.user.userid)
         {
             // 胜利
             gameendui.object_gameendicon[0].SetActive(true);
@@ -454,7 +488,8 @@ public class Panel : Singleton<Panel>
         }
         User winner = (CurrentPlayer.Ins.winner_id == CurrentPlayer.Ins.user.userid) ? CurrentPlayer.Ins.user : CurrentPlayer.Ins.opponent;
         string winner_color = winner.color == 1 ? "（黑方）" : "（白方）";
-        gameendui.text_gameendresult.text = winner.username + winner_color + "胜";
+        string winner_name = (GameType == 0) ? "" : winner.username;
+        gameendui.text_gameendresult.text = winner_name +winner_color + "胜";
     }
 
     // 更新成绩
@@ -476,6 +511,7 @@ public class Panel : Singleton<Panel>
     #endregion
 
     #region 计时器逻辑
+    /*
     void OnTimeEnd()
     {
          Debug.Log("时间到！");
@@ -485,9 +521,10 @@ public class Panel : Singleton<Panel>
     void OnSecond()
     {
         Debug.Log("又一秒！");
-        game.timeUsed++;
+        //game.timeUsed++;
         //timerLabel.text = timer._currentTime.ToString();
     }
+    */
     #endregion
 
 }
