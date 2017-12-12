@@ -10,6 +10,7 @@ public class GoUIManager : Singleton<GoUIManager> {
     public GameObject blackStone;           // 黑子
     //public GameObject stoneRing;          // 指示环
     public GameObject confirm;              // 确认落子按钮
+    public GameObject directionButtons;     // 方向键
     public LineRenderer line_vertical;      // 指示线
     public LineRenderer line_horizontal;
 
@@ -152,8 +153,12 @@ public class GoUIManager : Singleton<GoUIManager> {
         curMouseIndex = curIndex;
         // 显示选中位置光标
         setRing(curIndex);
-        // 显示确认落子按钮
-        if(Panel.Ins.game.gameState == 1) confirm.SetActive(true);
+        // 显示确认落子按钮和方向键
+        if (Panel.Ins.game.gameState == 1) 
+        {
+            confirm.SetActive(true);
+            directionButtons.SetActive(true);
+        } 
     }
 
     // 确认落子
@@ -193,8 +198,9 @@ public class GoUIManager : Singleton<GoUIManager> {
         {
             // 切换玩家
             Panel.Ins.PlayerChange();
-            // 隐藏确认落子按钮
+            // 隐藏确认落子按钮和方向键
             confirm.SetActive(false);
+            directionButtons.SetActive(false);
         }
         // 刷新棋盘
         UpdateAllMoves();

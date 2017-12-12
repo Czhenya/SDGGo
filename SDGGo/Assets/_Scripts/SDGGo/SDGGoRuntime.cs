@@ -54,6 +54,14 @@ public class SDGGoRuntime : MonoBehaviour {
         // gnugo落子一步并返回一维落子坐标，如果落子失败返回-1
         [DllImport("gnuGo-3.8")]
         public static extern int SDGGenComputerMove(int color);
+
+        // 判断GNUGo落子合法性
+        [DllImport("gnuGo-3.8")]
+        public static extern int SDGIsAllowedMove(int i, int j, int color);
+
+        // 棋盘棋子状态，0:白子 1:黑子 -1:无子
+        [DllImport("gnuGo-3.8")]
+        public static extern int SDGBoardStat(int i, int j);
         
 #endif
     #endregion
