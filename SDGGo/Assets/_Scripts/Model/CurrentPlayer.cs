@@ -14,6 +14,11 @@ public class CurrentPlayer : Singleton<CurrentPlayer>
     public bool isRoomOwner;      // 是否是房主
     public string winner_id;      // 获胜者id
 
+    // 游戏设置
+    public bool isBGMOn;          // 背景音乐开关
+    public bool isKomi;           // 黑子是否贴目
+    public bool isAIPlayerFisrt;  // 人机对战是否玩家先手
+
     void Start()
     {
         user = new User();
@@ -23,6 +28,10 @@ public class CurrentPlayer : Singleton<CurrentPlayer>
         opponent.userid = "649869";
         opponent.color = 0;
         Reset();
+
+        isBGMOn = true;
+        isKomi = true;
+        isAIPlayerFisrt = true;
     }
 
     public void Reset()

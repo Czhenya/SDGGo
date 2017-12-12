@@ -22,10 +22,11 @@ public class UIPlayer {
 public class UIGame {
     public GameObject object_gameui;
     public GameObject object_startgame;             // 开始游戏按钮
-    public Text text_timer;              // 计时标签
-    public Text text_GameResult;              // 当前游戏结算
-    public Text text_GameState;               // 游戏状态
-    public Text text_roomid;             // 房间号标签
+    public Text text_timer;                         // 计时标签
+    public Text text_GameResult;                    // 当前游戏结算
+    public Text text_GameState;                     // 游戏状态
+    public Text text_roomid;                        // 房间号标签
+    public Text text_komi;                          // 贴目
     public GameObject checkoutDialog;
     public GameObject[] colorsToMove;
     public UIPlayer[] players;
