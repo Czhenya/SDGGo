@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿///
+/// 围棋demo
+///
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,7 +28,7 @@ public class Panel : Singleton<Panel>
     bool isGameStart = false;            // 游戏开始开关
     bool isGameOver = false;             // 游戏结束开关
     bool isReqCheckOut = false;          // 请求结算开关
-    bool isAICanMove = true;
+    public bool isAICanMove = true;      // AI在思考落子期间不可再有其他操作
 
     #region 脚本生命周期
     // 初始化

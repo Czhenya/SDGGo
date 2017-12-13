@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿///
+/// 棋盘器界面管理器
+///
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,6 +13,7 @@ public class GoUIManager : Singleton<GoUIManager> {
     public GameObject blackStone;           // 黑子
     //public GameObject stoneRing;          // 指示环
     public GameObject confirm;              // 确认落子按钮
+    public GameObject undoButton;           // 悔棋按钮
     public GameObject directionButtons;     // 方向键
     public LineRenderer line_vertical;      // 指示线
     public LineRenderer line_horizontal;
@@ -156,9 +160,10 @@ public class GoUIManager : Singleton<GoUIManager> {
         // 显示确认落子按钮和方向键
         if (Panel.Ins.game.gameState == 1) 
         {
+            undoButton.SetActive(false);
             confirm.SetActive(true);
             directionButtons.SetActive(true);
-        } 
+        }
     }
 
     // 确认落子
@@ -201,10 +206,27 @@ public class GoUIManager : Singleton<GoUIManager> {
             // 隐藏确认落子按钮和方向键
             confirm.SetActive(false);
             directionButtons.SetActive(false);
+            // 显示悔棋按钮
+            if (Panel.Ins.GameType != 2) 
+                undoButton.SetActive(true);
         }
         // 刷新棋盘
         UpdateAllMoves();
         yield return 0;
+    }
+
+    // 悔棋
+    public void UndoMove()
+    {
+        if (Panel.Ins.GameType == 1 && !Panel.Ins.isAICanMove) return;
+
+        int n = Panel.Ins.GameType == 1 ? 2 : 1;
+
+        if (Panel.Ins.game.UndoMove(n)) {
+            UpdateAllMoves();
+            if(n%2 == 1)
+                Panel.Ins.game.ChangeColor();
+        }
     }
 
     // 移除界面指定棋子
@@ -224,14 +246,11 @@ public class GoUIManager : Singleton<GoUIManager> {
     }
     // 刷新棋盘
     public void UpdateAllMoves() {
-        for (int i = 0; i < panelScale; ++i)
+        for (int i = 0; i < panelScale * panelScale;++i )
         {
-            for (int j = 0; j < panelScale; ++j)
-            {
-                Point index = new Point(i, j);
-                int color = Panel.Ins.game.GetPanelColor(index);
-                setMove(index,color);
-            }
+            Point index = new Point(i/panelScale, i%panelScale);
+            int color = Panel.Ins.game.GetPanelColor(index);
+            setMove(index, color);
         }
     }
 #endregion

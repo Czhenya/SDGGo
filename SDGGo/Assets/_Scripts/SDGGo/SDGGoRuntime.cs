@@ -33,6 +33,10 @@ public class SDGGoRuntime : MonoBehaviour {
     [DllImport("sdggnugo")]
     public static extern int SDGPlayMove(int i, int j, int color);
 
+    // 悔棋n步
+    [DllImport("sdggnugo")]
+    public static extern int SDGUndoMove(int n);
+
     // gnugo落子一步并返回一维落子坐标，如果落子失败返回-1
     [DllImport("sdggnugo")]
     public static extern int SDGGenComputerMove(int color);
@@ -50,6 +54,10 @@ public class SDGGoRuntime : MonoBehaviour {
         // 在gnugo棋盘上指定位置落子，并返回是否落子成功
         [DllImport("gnuGo-3.8")]
         public static extern int SDGPlayMove(int i, int j, int color);
+
+        // 悔棋n步
+        [DllImport("gnuGo-3.8")]
+        public static extern int SDGUndoMove(int n);
 
         // gnugo落子一步并返回一维落子坐标，如果落子失败返回-1
         [DllImport("gnuGo-3.8")]

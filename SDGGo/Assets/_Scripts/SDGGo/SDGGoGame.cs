@@ -141,6 +141,15 @@ namespace SDG {
         }
 
         /// <summary>
+        /// 悔棋n步
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns>是否悔棋成功</returns>
+        public bool UndoMove(int n) {
+            return SDGGoRuntime.SDGUndoMove(n) == 1 ? true : false;
+        }
+        
+        /// <summary>
         /// gnugo智能计算指定颜色最优的落子点落子
         /// </summary>
         /// <param name="color">AI棋手的颜色</param>
