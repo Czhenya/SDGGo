@@ -27,6 +27,7 @@ public class UIGame {
     public Text text_GameState;                     // 游戏状态
     public Text text_roomid;                        // 房间号标签
     public Text text_komi;                          // 贴目
+    public Text text_level;                         // 难度等级
     public GameObject checkoutDialog;
     public GameObject[] colorsToMove;
     public UIPlayer[] players;

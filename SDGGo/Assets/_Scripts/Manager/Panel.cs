@@ -257,6 +257,7 @@ public class Panel : Singleton<Panel>
         GoUIManager.Ins.ClearAllMoves();
         gameui.text_GameResult.text = "白棋领先"+game.komi+"目";
         gameui.text_komi.text = "黑子贴"+game.komi+"目";
+        gameui.text_level.text = "AI等级：" + SDGGoRuntime.SDGGetLevel() + "级";
     }
 
     // 继续游戏
@@ -398,6 +399,10 @@ public class Panel : Singleton<Panel>
         if (CurrentPlayer.Ins.isKomi)
         {
             game.komi = 6.5f;
+        }
+        // AI难度等级
+        if (GameType == 1) {
+            SDGGoRuntime.SDGSetLevel(CurrentPlayer.Ins.curLevel);
         }
 
         // 背景音乐

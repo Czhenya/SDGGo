@@ -27,7 +27,7 @@ public class MenuManager : MonoBehaviour {
     }
 
     public void GameHC() {
-        GoSceneManager.Ins.EnterLoadingScene("GAME_H_C");
+        GoSceneManager.Ins.EnterLoadingScene("LevelSelect");
     }
 
     public void OnlineGame() {

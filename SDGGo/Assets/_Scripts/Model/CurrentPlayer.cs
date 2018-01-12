@@ -18,6 +18,7 @@ public class CurrentPlayer : Singleton<CurrentPlayer>
     public bool isBGMOn;          // 背景音乐开关
     public bool isKomi;           // 黑子是否贴目
     public bool isAIPlayerFisrt;  // 人机对战是否玩家先手
+    public int curLevel;          // 游戏难度设置
 
     void Start()
     {
@@ -32,6 +33,7 @@ public class CurrentPlayer : Singleton<CurrentPlayer>
         isBGMOn = true;
         isKomi = true;
         isAIPlayerFisrt = true;
+        curLevel = 10;
     }
 
     public void Reset()

@@ -57,6 +57,8 @@ namespace SDG {
 
             // 初始化gnugo
             SDGGoRuntime.SDGGoInit(_scale);
+            SDGGoRuntime.SDGSetMaxLevel(15);
+            SDGGoRuntime.SDGSetMinLevel(-5);
         }
 
         /// <summary>
