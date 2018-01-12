@@ -1,0 +1,1 @@
+ndk-build NDK_PROJECT_PATH=. NDK_APPLICATION_MK=C:\Users\jiangxinhou01\Desktop\SDGGNUGo围棋项目最终版（蒋信厚）\GNUGO-SO安卓封装工程\Application.mk
